@@ -87,7 +87,7 @@ Nel report viene inserito il codice di estrazione e lavorazione dei dati. Una vo
 La stampa viene lanciata con un messaggio specifico. I vari dati di questo messaggio sono contenuti nella struttura <i>NAST</i>.
 
 
-**Mandare una stampa tramite mail ( allegato pdf )**
+**Mandare una stampa tramite mail ( n. allegati pdf )**
 
  ```abap
   DATA:ls_outpar           TYPE sfpoutputparams,
@@ -158,34 +158,39 @@ La stampa viene lanciata con un messaggio specifico. I vari dati di questo messa
       internal_error     = 3
       OTHERS             = 4.
 
-  lt_solix = cl_bcs_convert=>xstring_to_solix( iv_xstring = ls_output-pdf ).
-
+   lt_solix = cl_bcs_convert=>xstring_to_solix( iv_xstring = ls_output-pdf ).
   DATA(lv_size) = CONV so_obj_len( xstrlen( pdf_xstring ) ).
 
   TRY.
+    " Allego stampa
       lo_send_request = cl_bcs=>create_persistent( ).
       lo_pdf_content = cl_document_bcs=>xstring_to_solix( ls_output-pdf ).
+
       lo_document = cl_document_bcs=>create_document(
-                      i_type    = CONV so_obj_tp('PDF') " cf. RAW, DOC
+                      i_type    = CONV so_obj_tp('PDF')
                       i_hex    = lt_solix
                       i_length = lv_size
                       i_subject = CONV so_obj_des( |{ lv_subject }| )
                  ).
 
-" ***********************************************************
-" Questo metodo può sostituire il metodo create document
-*      lo_document->add_attachment(
-*    EXPORTING
-*      i_attachment_type = 'PDF'
-*      i_attachment_subject = 'Form'
-*      i_att_content_hex = lt_solix ).
-" *************************************************************
+      lt_solix = cl_bcs_convert=>xstring_to_solix( iv_xstring = lv_xstring ).
+      lv_size = CONV so_obj_len( xstrlen( pdf_xstring ) ).
+      lo_pdf_content = cl_document_bcs=>xstring_to_solix( lv_xstring ).
+
+      lo_document->add_attachment(
+        EXPORTING
+          i_attachment_type     = CONV so_obj_tp('PDF')
+          i_attachment_subject  = CONV so_obj_des( |MD159| )
+          i_attachment_size     = lv_size
+          i_att_content_hex     = lt_solix
+      ).
 
       lo_send_request->set_document( lo_document ).
       lo_recipient = cl_cam_address_bcs=>create_internet_address(
            i_address_string = |{ lv_mail }|
       ).
       lo_send_request->add_recipient( i_recipient = lo_recipient ).
+
       lv_sent_to_all = lo_send_request->send(
         i_with_error_screen = 'X'
        ).
