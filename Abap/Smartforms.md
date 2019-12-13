@@ -13,9 +13,10 @@ data = ls_data.
  ```
  La grafica di componimento è diversa da quella dei PDF form ma l'idea è molto simile. La variabile per stampare il numero della pagina attuale è <i>SFSY-PAGE</i>.
  
+
+ Negli smartforms vengono utilizzati i template ( da non confondere graficamente con le tabelle ) e consentono di "disegnare" una struttura per organizzare la stampa dei dati. 
  
- Negli smartforms vengono utilizzati i template ( da non confondere graficamente con le tabelle ) e consentono di "disegnare" una struttura per organizzare la stampa dei dati.
- 
- 
- 
+  Se uno smartform viene lanciato ma va in errore è possibile debuggare l'errore andando in:
+  *SE37 -> FM SSFRT_READ_ERROR -> METTERE DEBUG ALLA RIGA 16 -> LEGGERE TABELLA errortab*. Dopo aver trovato il messaggio confrontarlo con quello nella SE91 con la classe nel *msgid* e il numero messaggio *msgno*.
+  
 <i>Vedere link esterni per approfondimenti</i>
