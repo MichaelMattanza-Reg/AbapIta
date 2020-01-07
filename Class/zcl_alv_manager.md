@@ -2,24 +2,24 @@
 Questa classe può essere utilizzata per gestire toolbar e tabelle utilizzate da un’alv.
 Occorre inserire tra i tipi della classe il TIPO TABELLA della tabella che si sta utilizzando e creare tra i dati globali la tabella nominata con GT_{nome report}. Quando si chiama il costruttore, passare la tabella di output, l’alv e il nome del report chiamante ( sy-cprog ). 
 Nel costruttore passare la tabella di import alla tabella creata.
+<br><br>
+Per ogni metodo ci sarà un case when basato sul nome del programma chiamante. Inserire il when con il nome del programma chiamante e il proprio codice. <br><br>
 
-Per ogni metodo ci sarà un case when basato sul nome del programma chiamante. Inserire il when con il nome del programma chiamante e il proprio codice. 
-
-Classe: ZCL_ALV_MANAGER
-Metodi: 
-Handle_toolbar ( aggiunge bottoni sulla toolbar )
-Handle_user_command ( gestione dei vari bottoni )
-Top_of_page ( Evento TOP_OF_PAGE )
-Create_dyn_fc ( crea il field catalog dinamico )
-Constructor ( costruttore )
-Get_view_data ( Lavora i dati selezionati dalla alv )
-Save ( Salvataggio dati )
+- Classe: *ZCL_ALV_MANAGER*
+- Metodi: 
+  - *Handle_toolbar* ( aggiunge bottoni sulla toolbar )
+  - *Handle_user_command* ( gestione dei vari bottoni )
+  - *Top_of_page* ( Evento TOP_OF_PAGE )
+  - *Create_dyn_fc* ( crea il field catalog dinamico )
+  - *Constructor* ( costruttore )
+  - *Get_view_data* ( Lavora i dati selezionati dalla alv )
+  - *Save* ( Salvataggio dati )
 
 ATTENZIONE
 Il metodo create_dyn_fc riceve in input il tipo tabella ZT_FC_CUSTOM. Se si vuole modificare un componente del field catalog si può inserire la modifica in questa tabella valorizzando i campi:
-FIELDNAME: nome del campo della tabella di output ( es. matnr )
-FC_COMPONENT: nome del componente del field catalog da modificare ( es. no_out )
-VALUE: valore che si vuole dare al componente del field catalog ( es. ‘X’ )
+  - *FIELDNAME:* nome del campo della tabella di output ( es. matnr )
+  - *FC_COMPONENT:* nome del componente del field catalog da modificare ( es. no_out )
+  - *VALUE:* valore che si vuole dare al componente del field catalog ( es. ‘X’ )
 
 ```abap
 class ZCL_ALV_MANAGER definition
