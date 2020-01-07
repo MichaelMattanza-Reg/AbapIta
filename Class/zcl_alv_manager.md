@@ -5,8 +5,8 @@ Nel costruttore passare la tabella di import alla tabella creata.
 <br><br>
 Per ogni metodo ci sarà un case when basato sul nome del programma chiamante. Inserire il when con il nome del programma chiamante e il proprio codice. <br><br>
 
-- Classe: *ZCL_ALV_MANAGER*
-- Metodi: 
+- **Classe**: *ZCL_ALV_MANAGER*
+- **Metodi**: 
   - *Handle_toolbar* ( aggiunge bottoni sulla toolbar )
   - *Handle_user_command* ( gestione dei vari bottoni )
   - *Top_of_page* ( Evento TOP_OF_PAGE )
@@ -20,6 +20,13 @@ Il metodo create_dyn_fc riceve in input il tipo tabella ZT_FC_CUSTOM. Se si vuol
   - *FIELDNAME:* nome del campo della tabella di output ( es. matnr )
   - *FC_COMPONENT:* nome del componente del field catalog da modificare ( es. no_out )
   - *VALUE:* valore che si vuole dare al componente del field catalog ( es. ‘X’ )
+  
+- **Tabella:** ZT_FC_CUSTOM
+- **Struttura:** ZFC_CUSTOM
+- **CAMPI:**
+  - *FIELDNAME*	    1 Type		CHAR	255	0	Nome campo tabella output
+  - *FC_COMPONENT*	1 Type		CHAR	255	0	Nome componente FC da modificare
+  - *VALUE*	        1 Type		CHAR	255	0	Valore componente FC da modificare
 
 ```abap
 class ZCL_ALV_MANAGER definition
