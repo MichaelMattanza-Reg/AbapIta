@@ -1,4 +1,4 @@
-ALV Manager
+<h1>ALV Manager</h1>
 Questa classe può essere utilizzata per gestire toolbar e tabelle utilizzate da un’alv.
 Occorre inserire tra i tipi della classe il TIPO TABELLA della tabella che si sta utilizzando e creare tra i dati globali la tabella nominata con GT_{nome report}. Quando si chiama il costruttore, passare la tabella di output, l’alv e il nome del report chiamante ( sy-cprog ). 
 Nel costruttore passare la tabella di import alla tabella creata.
