@@ -20,9 +20,10 @@ Il metodo create_dyn_fc riceve in input il tipo tabella ZT_FC_CUSTOM. Se si vuol
   - *FIELDNAME:* nome del campo della tabella di output ( es. matnr )
   - *FC_COMPONENT:* nome del componente del field catalog da modificare ( es. no_out )
   - *VALUE:* valore che si vuole dare al componente del field catalog ( es. ‘X’ )
+  <br><br>
   
-- **Tabella:** ZT_FC_CUSTOM
-- **Struttura:** ZFC_CUSTOM
+- **Tabella:** *ZT_FC_CUSTOM*
+- **Struttura:** *ZFC_CUSTOM*
 - **CAMPI:**
   - *FIELDNAME*	    1 Type		CHAR	255	0	Nome campo tabella output
   - *FC_COMPONENT*	1 Type		CHAR	255	0	Nome componente FC da modificare
