@@ -25,9 +25,9 @@ Il metodo create_dyn_fc riceve in input il tipo tabella ZT_FC_CUSTOM. Se si vuol
 - **Tabella:** *ZT_FC_CUSTOM*
 - **Struttura:** *ZFC_CUSTOM*
 - **CAMPI:**
-  - *FIELDNAME*	    1 Type		CHAR	255	0	Nome campo tabella output
-  - *FC_COMPONENT*	1 Type		CHAR	255	0	Nome componente FC da modificare
-  - *VALUE*	        1 Type		CHAR	255	0	Valore componente FC da modificare
+  - *FIELDNAME*,	    	CHAR	255,		Nome campo tabella output
+  - *FC_COMPONENT*, 		CHAR	255,	Nome componente FC da modificare
+  - *VALUE*,        		CHAR	255,		Valore componente FC da modificare
 
 ```abap
 class ZCL_ALV_MANAGER definition
