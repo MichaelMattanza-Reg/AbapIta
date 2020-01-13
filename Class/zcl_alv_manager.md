@@ -1,33 +1,22 @@
 <h1>ALV Manager</h1>
-Questa classe può essere utilizzata per gestire toolbar e tabelle utilizzate da un’alv.
-Occorre inserire tra i tipi della classe il TIPO TABELLA della tabella che si sta utilizzando e creare tra i dati globali la tabella nominata con GT_{nome report}. Quando si chiama il costruttore, passare la tabella di output, l’alv e il nome del report chiamante ( sy-cprog ). 
-Nel costruttore passare la tabella di import alla tabella creata.
+Questa classe può essere utilizzata per gestire toolbar e tabelle utilizzate da un’alv. E’ una classe generale quindi NON deve essere inserito del codice per un report specifico.
 <br><br>
-Per ogni metodo ci sarà un case when basato sul nome del programma chiamante. Inserire il when con il nome del programma chiamante e il proprio codice. <br><br>
 
 - **Classe**: *ZCL_ALV_MANAGER*
 - **Metodi**: 
   - *Handle_toolbar* ( aggiunge bottoni sulla toolbar )
   - *Handle_user_command* ( gestione dei vari bottoni )
   - *Top_of_page* ( Evento TOP_OF_PAGE )
-  - *Create_dyn_fc* ( crea il field catalog dinamico )
+  - *Create_dyn_fc* ( crea il field catalog dinamico - Privato -> chiamato dal costruttore )
   - *Constructor* ( costruttore )
-  - *Get_view_data* ( Lavora i dati selezionati dalla alv )
-  - *Save* ( Salvataggio dati )
+  - *Get_fcat* ( Ritorna il field catalog della tabella - PUBBLICO )<br><br>
 
-ATTENZIONE
+ATTENZIONE<br>
 Il metodo create_dyn_fc riceve in input il tipo tabella ZT_FC_CUSTOM. Se si vuole modificare un componente del field catalog si può inserire la modifica in questa tabella valorizzando i campi:
   - *FIELDNAME:* nome del campo della tabella di output ( es. matnr )
   - *FC_COMPONENT:* nome del componente del field catalog da modificare ( es. no_out )
   - *VALUE:* valore che si vuole dare al componente del field catalog ( es. ‘X’ )
   <br><br>
-  
-- **Tabella:** *ZT_FC_CUSTOM*
-- **Struttura:** *ZFC_CUSTOM*
-- **CAMPI:**
-  - *FIELDNAME*,	    	CHAR	255,		Nome campo tabella output
-  - *FC_COMPONENT*, 		CHAR	255,	Nome componente FC da modificare
-  - *VALUE*,        		CHAR	255,		Valore componente FC da modificare
 
 ```abap
 class ZCL_ALV_MANAGER definition
@@ -36,8 +25,16 @@ class ZCL_ALV_MANAGER definition
 
 public section.
 
+  types:
+    begin of ty_fc_custom,
+          fieldname      TYPE char255,
+          fc_component   TYPE char255,
+          value          TYPE char255,
+        end of ty_fc_custom .
+  types:
+    tty_fc_custom TYPE TABLE OF ty_fc_custom .
+
   data GO_ALV type ref to CL_GUI_ALV_GRID .
-  data GT_VALUTAZIONE_FORN type ztab_outtab . " type table from se11
   data GV_PROGRAM_NAME type STRING .
 
   methods HANDLE_TOOLBAR
@@ -53,26 +50,28 @@ public section.
     for event TOP_OF_PAGE of CL_GUI_ALV_GRID
     importing
       !E_DYNDOC_ID .
-  class-methods CREATE_DYN_FC
-    importing
-      value(IS_OUTTAB) type DATA
-      value(IT_CUSTOM_FC) type ZT_FC_CUSTOM optional
-    changing
-      value(CT_FIELDCAT) type LVC_T_FCAT .
   methods CONSTRUCTOR
     importing
       value(IV_PROGRAM_NAME) type STRING
       value(IT_OUTTAB) type ANY
-      value(IO_ALV) type ref to CL_GUI_ALV_GRID .
+      value(IO_ALV) type ref to CL_GUI_ALV_GRID
+      value(IT_TOOLBAR_BUTTON) type TTB_BUTTON optional
+      value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional .
+  methods GET_FCAT
+    returning
+      value(RT_FCAT) type LVC_T_FCAT .
 protected section.
+
+  data GT_FCAT type LVC_T_FCAT .
+  data GT_TOOLBAR_BUTTON type TTB_BUTTON .
 private section.
 
-  methods GET_VIEW_DATA
+  methods CREATE_DYN_FC
     importing
-      value(I_ROW) type LVC_INDEX .
-  methods SAVE
-    importing
-      value(IT_ROWS) type LVC_T_ROW optional .
+      value(IS_OUTTAB) type DATA
+      value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional
+    returning
+      value(CT_FIELDCAT) type LVC_T_FCAT .
 ENDCLASS.
 
 
@@ -86,31 +85,51 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * | [--->] IV_PROGRAM_NAME                TYPE        STRING
 * | [--->] IT_OUTTAB                      TYPE        ANY
 * | [--->] IO_ALV                         TYPE REF TO CL_GUI_ALV_GRID
+* | [--->] IT_TOOLBAR_BUTTON              TYPE        TTB_BUTTON(optional)
+* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method CONSTRUCTOR.
 
+    DATA: lref_row_outtab  TYPE REF TO data,
+          lref_outtab TYPE REF TO data.
+
+    FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
+                   <fs_outtab>     TYPE INDEX TABLE.
+
+    " Salvo internamente i dati in inpur
     go_alv = io_alv.
     gv_program_name = iv_program_name.
+    gt_toolbar_button = it_toolbar_button.
 
-    CASE gv_program_name.
-      WHEN 'nome_prog'.
-        MOVE-CORRESPONDING it_outtab TO gt_valutazione_forn.
+    " Creo una tabella indicizzata
+    CREATE DATA lref_outtab LIKE it_outtab.
+    ASSIGN lref_outtab->* TO <fs_outtab>.
 
-    ENDCASE.
+    " Creo una struttura basata sulla tabella
+    CREATE DATA lref_row_outtab LIKE LINE OF <fs_outtab>.
+    ASSIGN lref_row_outtab->* TO <fs_outtab_row>.
+
+     " Passo i dati in input alla tabella
+    MOVE-CORRESPONDING it_outtab TO <fs_outtab>.
+
+    " Creo il fc della tabella ricevuta
+    gt_fcat = create_dyn_fc( EXPORTING is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+
   endmethod.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Static Public Method ZCL_ALV_MANAGER=>CREATE_DYN_FC
+* | Instance Private Method ZCL_ALV_MANAGER->CREATE_DYN_FC
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IS_OUTTAB                      TYPE        DATA
-* | [--->] IT_CUSTOM_FC                   TYPE        ZT_FC_CUSTOM(optional)
-* | [<-->] CT_FIELDCAT                    TYPE        LVC_T_FCAT
+* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
+* | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method CREATE_DYN_FC.
 
      DATA : lo_ref_descr TYPE REF TO cl_abap_structdescr,
             lt_detail    TYPE abap_compdescr_tab,
+            lt_field_det TYPE REF TO cl_abap_structdescr,
             ls_detail    LIKE LINE OF lt_detail,
             lr_typedescr TYPE REF TO cl_abap_typedescr,
             lv_counter   TYPE i VALUE 0.
@@ -121,11 +140,13 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   lo_ref_descr ?= cl_abap_typedescr=>describe_by_data( is_outtab ). "Chiamare metodo statico su una struttura
   lt_detail[] = lo_ref_descr->components.
 
+  " Loop sui componenti della struttura - Creo fc
   LOOP AT lt_detail INTO ls_detail.
     ASSIGN COMPONENT ls_detail-name OF STRUCTURE is_outtab TO FIELD-SYMBOL(<ls_comp>).
 
     IF <ls_comp> IS ASSIGNED.
       ADD 1 TO lv_counter.
+
       lr_typedescr = cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
 
       APPEND VALUE #(
@@ -138,6 +159,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     ENDIF.
   ENDLOOP.
 
+  " Estraggo descrizioni colonne std
    SELECT rollname, scrtext_m
     FROM dd04t
     INTO TABLE @DATA(lt_coldescr)
@@ -145,10 +167,12 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     WHERE rollname EQ @ct_fieldcat-ref_field
     AND ddlanguage EQ @sy-langu.
 
+   " Trasformo i campi inseriti dall'utente in upper case per evitare errori
   LOOP AT it_custom_fc REFERENCE INTO DATA(lr_cust_fc).
     TRANSLATE lr_cust_fc->fieldname TO UPPER CASE.
   ENDLOOP.
 
+  " Applico le modifiche custom ai campi del fc
   LOOP AT ct_fieldcat ASSIGNING FIELD-SYMBOL(<fs_fcat>).
     <fs_fcat>-scrtext_m = VALUE #( lt_coldescr[ rollname = <fs_fcat>-ref_field ]-scrtext_m OPTIONAL ).
 
@@ -167,21 +191,16 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->GET_VIEW_DATA
+* | Instance Public Method ZCL_ALV_MANAGER->GET_FCAT
 * +-------------------------------------------------------------------------------------------------+
-* | [--->] I_ROW                          TYPE        LVC_INDEX
+* | [<-()] RT_FCAT                        TYPE        LVC_T_FCAT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-  METHOD GET_VIEW_DATA.
+  method GET_FCAT.
 
-    DATA: lt_sel_rows TYPE TABLE OF se16n_seltab.
+    " Ritorno all'utente il fc creato nel costruttore
+    rt_fcat = gt_fcat.
 
-      CASE gv_program_name.
-        WHEN 'nome_prog'.
-          
-      ENDCASE.
-
-
-  ENDMETHOD.
+  endmethod.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
@@ -190,32 +209,11 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * | [--->] E_OBJECT                       LIKE
 * | [--->] E_INTERACTIVE                  LIKE
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-    METHOD HANDLE_TOOLBAR.
+  METHOD handle_toolbar.
 
-    CASE gv_program_name.
-      WHEN 'nome_prog'.
-        APPEND:
-          VALUE #(
-            butn_type = 3
-          ) TO e_object->mt_toolbar,
+    " Append dei bottoni custom alla toolbar standard
+    APPEND LINES OF gt_toolbar_button TO e_object->mt_toolbar.
 
-          VALUE #(
-            function = 'VIEW'
-            icon = icon_employee
-            quickinfo = 'Mostra storico'
-            text = 'Storico'
-            disabled = ' '
-          ) TO e_object->mt_toolbar,
-
-          VALUE #(
-            function = 'SAVE'
-            icon = icon_system_save
-            quickinfo = 'Salva'
-            text = 'Salva'
-            disabled = ' '
-          ) TO e_object->mt_toolbar.
-
-      ENDCASE.
   ENDMETHOD.
 
 
@@ -228,39 +226,19 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
     DATA: lt_rows     TYPE lvc_t_row.
 
+    " Ottengo le linee selezionate dall'alv
     CALL METHOD go_alv->get_selected_rows
       IMPORTING
         et_index_rows = lt_rows.
 
-    CASE e_ucomm.
-      WHEN 'VIEW'.
-        IF lines( lt_rows ) EQ 1.
-          get_view_data( i_row = lt_rows[ 1 ]-index ).
-        ENDIF.
+    " Chiamo il perform in base alla funzione passata e al numero righe selezionate
+    IF lines( lt_rows ) GT 0.
+      PERFORM (e_ucomm) IN PROGRAM (gv_program_name) IF FOUND USING lt_rows.
+    ELSE.
+      PERFORM (e_ucomm) IN PROGRAM (gv_program_name) IF FOUND.
+    ENDIF.
 
-      WHEN 'SAVE'.
-        save( it_rows = lt_rows ).
-
-    ENDCASE.
   ENDMETHOD.
-
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->SAVE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IT_ROWS                        TYPE        LVC_T_ROW(optional)
-* +--------------------------------------------------------------------------------------</SIGNATURE>
-  method SAVE.
-
-    CASE gv_program_name.
-      WHEN 'nome_prog'.
-        LOOP AT it_rows ASSIGNING FIELD-SYMBOL(<fs_rows>).
-          gt_valutazione_forn[ <fs_rows>-index ]-sended = 'X'.
-        ENDLOOP.
-        PERFORM save_changes IN PROGRAM nome_prog IF FOUND USING it_rows .
-
-    ENDCASE.
-  endmethod.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
@@ -268,18 +246,14 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] E_DYNDOC_ID                    LIKE
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-  method TOP_OF_PAGE.
+  METHOD top_of_page.
 
-  CASE gv_program_name.
-    WHEN 'nome_prog'.
-      CALL METHOD e_dyndoc_id->add_text
-       EXPORTING
-         TEXT      = 'Legenda'
-         SAP_STYLE = cl_dd_area=>heading.
+    " Aggiungo il testo nella top-of-page
+    CALL METHOD e_dyndoc_id->add_text
+      EXPORTING
+        text      = 'Header'
+        sap_style = cl_dd_area=>heading.
 
-  ENDCASE.
-
-
-  endmethod.
+  ENDMETHOD.
 ENDCLASS.
 ```
