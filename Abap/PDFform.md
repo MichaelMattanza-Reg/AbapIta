@@ -11,6 +11,9 @@ Quando si aggiunge il logo inserire nel tipo MIME <i>'IMAGE/BMP'<i/>.
   
 Lo script più utilizzato è quello che permette di nascondere i campi se non sono valorizzati. Posizionarsi sul campo da condizionare e impostare la voce dello script su <i>Initialize</i> con linguaggio <i>FormCalc</i> eseguito su <i>Client:</i>
 
+Nel caso la stampa non parta ma non venga creato un dump allora seguire i passi nel link sottostante per debuggare la stampa:
+ - https://blogs.sap.com/2017/11/29/usage-and-system-error-in-sap-adobe-forms/
+
 ```FormCalc
 if ($ eq null) then
 $.presence = "hidden"
