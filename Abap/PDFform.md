@@ -14,16 +14,41 @@ Lo script più utilizzato è quello che permette di nascondere i campi se non so
 Nel caso la stampa non parta ma non venga creato un dump allora seguire i passi nel link sottostante per debuggare la stampa:
  - https://blogs.sap.com/2017/11/29/usage-and-system-error-in-sap-adobe-forms/
 
+FormCalc
 ```FormCalc
 if ($ eq null) then
 $.presence = "hidden"
 endif
 ```
-Nel caso si voglia impostare la condizione sul modulo contenente il dato
+
+Javascript
+```Javascript
+if( this.rawValue == "" ){
+	this.presence = "hidden";
+}
+```
+
+Nel caso si voglia impostare la condizione sul modulo contenente il dato:
+
+- FormCalc
 ```FormCalc
-if($.ZZFLAG_TAB_DATE == "X") then
+/*Scirpt sul campo*/
+if ($ eq null) then
+$.parent.presence = "hidden"
+endif
+
+/*Scirpt sul modulo padre*/
+if($.ZZFLAG == "X") then
 	$.presence = "hidden"
 endif
+```
+
+Javascript
+```Javascript
+/*Script sul campo*/
+if( this.rawValue == "" ){
+	zzmodule.presence = "hidden";
+}
 ```
     
 **Report**</br>
