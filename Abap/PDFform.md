@@ -14,7 +14,7 @@ Lo script più utilizzato è quello che permette di nascondere i campi se non so
 Nel caso la stampa non parta ma non venga creato un dump allora seguire i passi nel link sottostante per debuggare la stampa:
  - https://blogs.sap.com/2017/11/29/usage-and-system-error-in-sap-adobe-forms/
 
-**Esempi di script**
+**Esempi di script**</br>
 Gli script FormCalc vengono eseguiti solitamente sull'evento *Initialize* eseguito su *Server*.</br>
 Gli script Javascript qui riportati vengono invece usati sull'evento *Form:ready* eseguito su *Client*.
 FormCalc
