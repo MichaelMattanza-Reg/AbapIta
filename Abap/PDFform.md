@@ -30,7 +30,7 @@ if( this.rawValue == "" ){
 
 Nel caso si voglia impostare la condizione sul modulo contenente il dato:
 
-- FormCalc
+FormCalc
 ```FormCalc
 /*Scirpt sul campo*/
 if ($ eq null) then
