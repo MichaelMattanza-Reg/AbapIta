@@ -30,4 +30,9 @@ Sequenza di azioni eeguite in un work center ( schedulazioni ). Vengono specific
 *Production Version*</br>
 E' un collegamento tra BOM e Routing. Possono esserci più versioni di processo per la produzione di un prodotto.</br> 
 </br></br></br>
-**Piano di produzione e controllo**
+**Piano di produzione e controllo**</br>
+*Planning*   
+Basato sui piani di vendita di un prodotto. Con la domanda di un prodotto viene generato un input per la richiesta di materialo (MRP) che controlla la disponibiltà dei vari materiali primari usati durante le varie fasi di produzione del prodotto attraverso una Master Data (es. BOM).   
+   
+*Execution*   
+Questi ordini pianificati vengono convertiti in ordini di produzione schedulati per tempistiche e routing. Una volta che l'ordine di produzione è stato completato viene creata una conferma dell'ordine, .... 
