@@ -35,4 +35,28 @@ E' un collegamento tra BOM e Routing. Possono esserci più versioni di processo 
 Basato sui piani di vendita di un prodotto. Con la domanda di un prodotto viene generato un input per la richiesta di materialo (MRP) che controlla la disponibiltà dei vari materiali primari usati durante le varie fasi di produzione del prodotto attraverso una Master Data (es. BOM).   
    
 *Execution*   
-Questi ordini pianificati vengono convertiti in ordini di produzione schedulati per tempistiche e routing. Una volta che l'ordine di produzione è stato completato viene creata una conferma dell'ordine, .... 
+Questi ordini pianificati vengono convertiti in ordini di produzione schedulati per tempistiche e routing. Una volta che l'ordine di produzione è stato completato viene creata una conferma dell'ordine con movimenti merci e materiali usati. 
+</br></br></br>
+**Demand Management**   
+La gestione della domanda è data dalla stima delle quantità e delle date di consegna per il prodotto finito. La gesitone della domanda sfrutta il *PIR* (Planned indipendent requirement) e il customer requirement.   
+Le strategie di pianificazione devono essere fatte per ogni prodotto. Rappresenta il metodo di produzione. Ci sono due metodi per fare questo:   
+- Made to stock: Indipendenetemente dagli ordini di vendita viene prodotto stock
+- Made to order: Produzione di materiale in base agli ordini di vendita generati
+</br></br></br>
+**MRP (Material Requirement Planning)**   
+Il MRP determina le carenze e crea le procedure per ottenere il necessario. Calcola e genera ordini pianificati per la produzione in-casa di materiali e ordini di acquisto per il materiale primario.   
+   
+Gestisce il tempo delle schedulazioni e calcola le date di produzione in ordini pianificati.   
+   
+Genera proposte di approvigionamento in base al BOM.
+</br></br></br>
+**Capacity Planning & Leveling**
+La pianificazione di capacità è usata per analizzare la capacità dei centri di lavoro di gestire il sovraccarico e spostare gli ordini per evitare problemi sulla capacità ( collo di bottiglia ).   
+   
+I requisiti di capacità vengono generati dal MRP sui work center e fino a che i work center lavorano con capacità infinite e pianificano tutto sui centri di lavoro. E' richiesto livellare la capacità dei work center.   
+   
+La capacità viene impostata per forzare le pianificazioni di produzione tramite una tabella di pianificazione.
+</br></br></br>
+**Production Order**   
+L'output del MRP è un ordine pianificato che deve essere convertito in un ordine di produzione per il proseguimento del processo.   ù
+   
