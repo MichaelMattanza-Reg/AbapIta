@@ -26,13 +26,20 @@ class ZCL_ALV_MANAGER definition
 public section.
 
   types:
-    begin of ty_fc_custom,
-          fieldname      TYPE char255,
-          fc_component   TYPE char255,
-          value          TYPE char255,
-        end of ty_fc_custom .
+    BEGIN OF ty_fc_custom,
+        fieldname    TYPE char255,
+        fc_component TYPE char255,
+        value        TYPE char255,
+      END OF ty_fc_custom .
   types:
-    tty_fc_custom TYPE TABLE OF ty_fc_custom .
+    BEGIN OF ty_button_toolbar,
+        ls_btn    TYPE stb_button,
+        has_param TYPE flag,
+      END OF ty_button_toolbar .
+  types:
+    tty_fc_custom TYPE table OF ty_fc_custom .
+  types:
+    tty_button_toolbar TYPE TABLE OF ty_button_toolbar .
 
   data GO_ALV type ref to CL_GUI_ALV_GRID .
   data GV_PROGRAM_NAME type STRING .
@@ -55,7 +62,7 @@ public section.
       value(IV_PROGRAM_NAME) type STRING
       value(IT_OUTTAB) type ANY
       value(IO_ALV) type ref to CL_GUI_ALV_GRID
-      value(IT_TOOLBAR_BUTTON) type TTB_BUTTON optional
+      value(IT_TOOLBAR_BUTTON) type TTY_BUTTON_TOOLBAR optional
       value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional .
   methods GET_FCAT
     returning
@@ -63,7 +70,7 @@ public section.
 protected section.
 
   data GT_FCAT type LVC_T_FCAT .
-  data GT_TOOLBAR_BUTTON type TTB_BUTTON .
+  data GT_TOOLBAR_BUTTON type TTY_BUTTON_TOOLBAR .
 private section.
 
   methods CREATE_DYN_FC
@@ -85,7 +92,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * | [--->] IV_PROGRAM_NAME                TYPE        STRING
 * | [--->] IT_OUTTAB                      TYPE        ANY
 * | [--->] IO_ALV                         TYPE REF TO CL_GUI_ALV_GRID
-* | [--->] IT_TOOLBAR_BUTTON              TYPE        TTB_BUTTON(optional)
+* | [--->] IT_TOOLBAR_BUTTON              TYPE        TTY_BUTTON_TOOLBAR(optional)
 * | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method CONSTRUCTOR.
@@ -212,7 +219,9 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   METHOD handle_toolbar.
 
     " Append dei bottoni custom alla toolbar standard
-    APPEND LINES OF gt_toolbar_button TO e_object->mt_toolbar.
+    LOOP AT gt_toolbar_button ASSIGNING FIELD-SYMBOL(<fs_toolbar>).
+      APPEND <fs_toolbar>-ls_btn TO e_object->mt_toolbar.
+    ENDLOOP.
 
   ENDMETHOD.
 
@@ -232,7 +241,8 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
         et_index_rows = lt_rows.
 
     " Chiamo il perform in base alla funzione passata e al numero righe selezionate
-    IF lines( lt_rows ) GT 0.
+    DATA(ls_button_triggered) = VALUE #( gt_toolbar_button[ ls_btn-function = e_ucomm ] OPTIONAL ).
+    IF ls_button_triggered-has_param EQ 'X'.
       PERFORM (e_ucomm) IN PROGRAM (gv_program_name) IF FOUND USING lt_rows.
     ELSE.
       PERFORM (e_ucomm) IN PROGRAM (gv_program_name) IF FOUND.
