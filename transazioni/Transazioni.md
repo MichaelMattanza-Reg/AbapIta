@@ -108,6 +108,8 @@
 
 **SE71:** Form painter sapscript
 
+**SE73**: Aggiornamento fonte SAPScript
+
 **SE78:** Caricare logo azienda
 
 **SE80:** Object navigator
