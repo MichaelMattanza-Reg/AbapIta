@@ -68,6 +68,8 @@
 
 **QA01 / QA02 / QA03:** Creazione, modifica, visualizza Inspection Lot
 
+**QA32** : Modifica dati lotto di controllo
+
 **SCOT:** Impostazioni mail
 
 **SCR3:** Configurazione impresa
