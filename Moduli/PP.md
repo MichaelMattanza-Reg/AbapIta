@@ -58,5 +58,17 @@ I requisiti di capacità vengono generati dal MRP sui work center e fino a che i
 La capacità viene impostata per forzare le pianificazioni di produzione tramite una tabella di pianificazione.
 </br></br></br>
 **Production Order**   
-L'output del MRP è un ordine pianificato che deve essere convertito in un ordine di produzione per il proseguimento del processo.   ù
-   
+L'output del MRP è un ordine pianificato che deve essere convertito in un ordine di produzione per il proseguimento del processo.
+L'ordine di produzione è un elemento di ricevuta fisso non affetto dalle lavorazioni del MRP, diversamente dall'ordine pianificato.
+    
+L'orinde di produzione è un documento che contiene i materiali e le quantità che devono essere prodotte. Contiene anche i componenti e le operazioni da effetturare nel work center. 
+
+**Production Order Confirmation**   
+Quando le merci vengono prodotte l'ordine di produzione deve essere confermato. 
+Durante la conferma i materiali possono essere consumati in Backflush ( distinta base prelevata dal magazzino alla consegna del prodotto finito ) e l'entrata merci può essere fatta automaticamente tramite l'operazione di Control Key nel Routing.
+
+
+**Production Order close**   
+Una volta confermato un ordine, questo diventa teco e viene dai fabbisogni materiale.
+
+
