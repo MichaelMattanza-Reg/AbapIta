@@ -1,3 +1,8 @@
+ <h1>Link esterni</h1>
+
+ - ALE 
+    - https://sapbrainsonline.com/ale-tutorial/sap-ale-details.html
+
  - Batch Input
    - https://www.guru99.com/bdc-batch-data-communication.html#1
    
