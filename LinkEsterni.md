@@ -65,6 +65,7 @@
 - Smartforms
   - https://www.guru99.com/smart-forms.html
   - http://www.kodyaz.com/sap-abap/se63-smartform-translation-and-export-with-slxt.aspx
+  - https://wiki.scn.sap.com/wiki/display/Snippets/Creating+custom+page+format+in+Smartforms+and+Sap+scripts (Dimensioni della pagina custom)
   
 - SPDD / SPAU
   - https://blogs.sap.com/2013/10/14/technical-upgrade-spdd-spau-phase/
