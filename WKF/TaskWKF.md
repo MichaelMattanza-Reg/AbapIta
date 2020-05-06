@@ -1,50 +1,59 @@
-<h1>WKF</h1>
+<h1>WKF SAP</h1>
 
-I workflow sono una serie di passi per costruire qualcosa ( documento, informazione, ecc... ). 
-Il primo passo è trasformare i dati utili in un xml e costruire la chiamata che farà partire il workflow.
+I workflow sono una serie di passi svolti per compiere un'azione complessa ( documento, informazione, ecc... ).
+Il primo passo è creare un metodo per ogni step che il wkf deve fare. E' consigliato creare una classe per ogni wkf in modo che ogni implementazione sia a se stante. Inserire nella classe un evento che sarà il trigger del wkf con i parametri da passare al contenitore del wkf stesso.
+
+Una volta creati i metodi, andare in *PFTC* e creare un Task Workflow (TS) al quale legare il metodo creato.
+Selezionare quindi la categoria oggetto Classe, legare il metodo creato, fare il binding del contenitore con i parametri del metodo ed infine flaggare la voce "Metodo oggetto sincrono".
+
+Una volta creato un task per ogni step del wkf, creare un Modello wkf nuovo (sempre da *PFTC*, tipo WS).   
+Nella sezione di trigger del wkf inserire la classe e l'evento sopra citato.   
+Andare quindi nella sezione del wkf builder e aggiungere il nodo attività: indicare quindi nella voce Task: TS + num. task creato.
+Impostare quindi i dati di passaggio cliccando sul bottone "Flusso di dati", creando nel container del wkf le variabili che dovete lavorare.
+
+**Chiamare un wkf**   
+Creare nella classe un metodo che fa il raise del wkf.   
 ```abap
-  CALL TRANSFORMATION id
-      SOURCE date       = sy-datum
-             batches    = lt_outtab
-             user       = sy-uname
-      RESULT XML lv_xml_data.
+  method RAISE_WKF.
+    " WS 900000000
+     CONSTANTS: lc_objtype TYPE sibftypeid VALUE '', " Classe che contiene l'evento del wkf
+                lc_event   TYPE sibfevent  VALUE ''. " Nome dell'evento che avvia il wkf
 
+    DATA: lv_param_name       TYPE swfdname,
+          lv_objkey           TYPE sweinstcou-objkey,
+          lref_event_parameters TYPE REF TO if_swf_ifs_parameter_container.
 
-  TRY.
-      CREATE OBJECT idoc_dom
-        EXPORTING
-          i_xstring_xml = lv_xml_data.
-    CATCH /reg/cx_err_exc_with_message .
-      WRITE 'Errore conversione xml'.
-  ENDTRY.
+    TRY.
+        CALL METHOD cl_swf_evt_event=>get_event_container
+          EXPORTING
+            im_objcateg  = cl_swf_evt_event=>mc_objcateg_cl
+            im_objtype   = lc_objtype
+            im_event     = lc_event
+          RECEIVING
+            re_reference = lref_event_parameters.
 
-  CREATE OBJECT lo_xml_doc .
-  lo_xml_doc->create_with_dom( idoc_dom->acl_document ).
-  lo_xml_doc->save( ).
+        lref_event_parameters->set( EXPORTING name = 'CT_MSEG' value = it_mseg ).
 
-  CREATE OBJECT atom_action
-    EXPORTING
-      i_bo_key = lo_xml_doc->ms_doc_key+10(32).
+        CALL METHOD cl_swf_evt_event=>raise_in_update_task
+          EXPORTING
+            im_objcateg        = cl_swf_evt_event=>mc_objcateg_cl
+            im_objtype         = lc_objtype
+            im_event           = lc_event
+            im_objkey          = lv_objkey
+            im_event_container = lref_event_parameters.
 
-    APPEND VALUE #(
-      element = 'gXMLMasterList'
-      value = lo_xml_doc->ms_doc_key+10(32)
-    ) TO lt_container ASSIGNING FIELD-SYMBOL(<fs_curr_line>).
+      CATCH cx_swf_evt_invalid_objtype .
+      CATCH cx_swf_evt_invalid_event .
+      CATCH cx_swf_cnt_cont_access_denied.
+      CATCH cx_swf_cnt_elem_access_denied.
+      CATCH cx_swf_cnt_elem_not_found.
+      CATCH cx_swf_cnt_elem_type_conflict.
+      CATCH cx_swf_cnt_unit_type_conflict.
+      CATCH cx_swf_cnt_elem_def_invalid.
+      CATCH cx_swf_cnt_container.
 
-    <fs_curr_line>-value+70 = '/REG/CL_ATOM_ACTION_BO          CL'.
+    ENDTRY.
 
-    APPEND VALUE #(
-      element = 'WORKFLOW'
-      value = 'WS99000103'
-    ) TO lt_container.
-
-    APPEND VALUE #(
-      element = 'I_VALUE'
-      value = |Plant { gv_werks } Mag. { gv_lgort } Operatore: { sy-uname }|
-    ) TO lt_container.
+  endmethod.
 ```
-Dopo aver preparato il necessario, chiamare la function che avvia il workflow ( vedere nella sezione function ).
-La funciton chiamerà a sua volta il metodo che possiede il nome del wkf e contiene i passi che ne creano i vari livelli con le informazioni necessarie.
 
-<b>Creare un task</b><br>
-Lanciando la transazione PFTC
