@@ -8,6 +8,14 @@
 
 **BAPI:** Bapi explorer
 
+**BD10:** Creazione IDoc
+
+**BD50:** Attivazione change pointers
+
+**BD56:** Filtro campi sensibili segmenti
+
+**BD64:** Configurazione modello di distribuzione
+
 **BD87:** Selezionare / inviare IDOC
 
 **BP:** Business partner
@@ -69,6 +77,8 @@
 **QA01 / QA02 / QA03:** Creazione, modifica, visualizza Inspection Lot
 
 **QA32** : Modifica dati lotto di controllo
+
+**SALE:** Configurazione ALE
 
 **SCOT:** Impostazioni mail
 
@@ -223,6 +233,8 @@
 **WE19:** Elaborare idoc in coda
 
 **WE20:** Accordi tra partner - Partner / Idoc
+
+**WE21:** Porte logiche
 
 **WE30:** Idoc
 
