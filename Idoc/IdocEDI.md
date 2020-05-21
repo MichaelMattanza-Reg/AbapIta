@@ -54,39 +54,49 @@ Rappresentazione di un canale di comunicazione (per idoc usare RFC)
 *Codice processo*   
 Codice che indica il functiom module o api da richiamare per il processo dell'idoc
 
-**Creare un idoc**   
-- Step generici
-    - definizione sistema logico destinazione (SALE)
-    - creazione dest RFC
-    - creazione porta
-    - creazione segmenti idoc
-    - creazione tipo idoc
-    - creazione tipo messaggio
-    - collegamento fra msg e tipo idoc
+**Configurare e ampliare un IDOC - Step by Step**   
+ 
+ - *SALE*   
+    - Andare in *Parametrizzazione di base > Installare sistemi logici > Denominare sistema logico* e inserire il nome del sistema logico.
 
-- Outbound
-    - configurazione accordi partner
-    - chiamata functio per estrazione dati
-    - conversione dati in idoc 
-    - invio idoc
+ - *WE81*
+    - Aggiungere il tipo di messaggio che si vuole utilizzare per l'idoc
 
-- Inbound
-    - creazione function module
-    - creazione codice di processamento
-    - configurazione accordi partner
+ - *BD56*
+    - Aggiungere i segmenti che vuoi filtrare considerando mittente, destinatario e le loro rispettive categorie
 
-**Creare estensione idoc**   
-Per estendere un idoc si parte da un tipo base    
-Extension -> Si crea estensione e aggiungere i campi che si vogliono aggiungere al tipo base.   
-Una volta scelto il segmento si aggiunge il tipo segmento con un minimo ed un massimo.   
-Selezionare il flag ISO per le unità di misura.   
-Per configurarlo: set realase da sm20.   
-Tramite le user exit aggiungere i campi all'idoc
+ - *BD61*
+   - Attivare change pointers
 
-**Ampliare un Idoc**   
-Per ampliare un Idoc è necessario creare un nuovo segmento tramite la transazione *WE31*.   
-Una volta creato il segmento è necessario andare in *WE30* per creare un Idoc con riferimento ad un tipo base. Una volta creato aggiungere il segmento creato precedentemente.   
-E' poi possibile collegare l'idoc ad un messaggio tramite la *WE82* ed ad una FM tramite la transazione *WE57*. Scrivere infine il codice in una exit o nella function creata tramite le transazioni *WE41 / WE42*. 
+ - *BD50*
+    - Attivazione dei change pointers per il tipo di messaggio
+
+ - *BD64*   
+    - Creare un sistema di distribuzione fittizio e aggiungere il filtro sul messaggio creato
+
+ - *WE31*
+    - Creare il segmento custom che vuoi aggiungere al'idoc. Una volta creato il segmento impostarlo in tipo rilasciato.
+
+ - *WE30*
+    - Creare un ampliamento scegliendo il tipo base idoc da cui partire. Aggiungere poi il segmento custom creato tramite la we31 impostando l'obbligatorietà, il numero min/max del segmento e il livello. 
+
+ - *WE82*
+    - Inserire in questa view un record per collegare Tipo messaggio, tipo base dell'idoc, ampliamento, release ( inserire * )
+
+ - *BD60*
+    - Collegare al messaggio custom dell'idoc il messaggio di riferimento e il function module.
+
+ - *WE21*
+    - Creare porta per l'elaborazione dell'idoc ( solitamente RFC )
+
+ - *WE20*
+    - Creare un accordo partner per un determinato tipo. Inserire i dati relativi all'idoc tra i parametri di uscita/entrata
+
+ - *Codice*
+    - Implementare una function o una exit per inserire i dati e il segmento custom nell'idoc
+
+**Creare IDOC da Change pointer**
+Lanciare il report RBDMIDOC da *SE38*. Inserendo il tipo messaggio, il report standard genererà n idoc in base alle modifiche tenute dai Change pointer in base ai record. Questo report accorpa gli idoc in base alla chiave: se è stato modificato più volte un oggetto verrà creato un solo idoc. 
 
 **Tabelle fondamentali**
 - *Edidc*: Informazioni di testata 
