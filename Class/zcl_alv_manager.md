@@ -103,7 +103,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
                    <fs_outtab>     TYPE INDEX TABLE.
 
-    " Salvo internamente i dati in inpur
+    " Salvo internamente i dati in input
     go_alv = io_alv.
     gv_program_name = iv_program_name.
     gt_toolbar_button = it_toolbar_button.
