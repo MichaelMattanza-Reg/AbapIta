@@ -184,15 +184,10 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     <fs_fcat>-scrtext_m = VALUE #( lt_coldescr[ rollname = <fs_fcat>-ref_field ]-scrtext_m OPTIONAL ).
 
     LOOP AT it_custom_fc ASSIGNING FIELD-SYMBOL(<fs_custom_fc>) WHERE fieldname EQ <fs_fcat>-fieldname.
-     
-     " Evito che il valore venga convertito in minuscolo
-      DATA(lv_fc_value) = <fs_custom_fc>-value.
-      TRANSLATE <fs_custom_fc> TO LOWER CASE.
-      ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp>).
+     ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp>).
       IF sy-subrc EQ 0.
-        <fs_comp> =  CONV #( lv_fc_value ).
+        <fs_comp> =  CONV #( <fs_custom_fc>-value ).
       ENDIF.
-      
     ENDLOOP.
   ENDLOOP.
 
