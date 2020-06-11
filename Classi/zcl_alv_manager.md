@@ -54,6 +54,10 @@ public section.
     for event USER_COMMAND of CL_GUI_ALV_GRID
     importing
       !E_UCOMM .
+  methods HANDLE_DATA_CHANGED
+    for event DATA_CHANGED of CL_GUI_ALV_GRID
+    importing
+      !ER_DATA_CHANGED .
   methods TOP_OF_PAGE
     for event TOP_OF_PAGE of CL_GUI_ALV_GRID
     importing
@@ -104,7 +108,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
                    <fs_outtab>     TYPE INDEX TABLE.
 
-    " Salvo internamente i dati in inpur
+    " Salvo internamente i dati in input
     go_alv = io_alv.
     gv_program_name = iv_program_name.
     gt_toolbar_button = it_toolbar_button.
@@ -139,7 +143,8 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
             lt_detail    TYPE abap_compdescr_tab,
             lt_field_det TYPE REF TO cl_abap_structdescr,
             ls_detail    LIKE LINE OF lt_detail,
-            lr_typedescr TYPE REF TO cl_abap_typedescr,
+            lref_typedescr TYPE REF TO cl_abap_typedescr,
+            lref_elemdescr TYPE REF TO cl_abap_elemdescr,
             lv_counter   TYPE i VALUE 0.
 
   FIELD-SYMBOLS: <fs_dref>  TYPE any,
@@ -155,13 +160,15 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     IF <ls_comp> IS ASSIGNED.
       ADD 1 TO lv_counter.
 
-      lr_typedescr = cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
+      lref_typedescr = cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
+      lref_elemdescr ?= cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
 
       APPEND VALUE #(
-        ref_field = lr_typedescr->absolute_name+6
+        ref_field = lref_typedescr->absolute_name+6
         fieldname = ls_detail-name
-        outputlen = lr_typedescr->length
+        outputlen = COND #( WHEN lref_typedescr->type_kind EQ 'P' THEN lref_elemdescr->output_length ELSE lref_typedescr->length )
         col_id    = lv_counter
+        decimals_o = lref_typedescr->decimals
       ) TO ct_fieldcat.
 
     ENDIF.
@@ -185,11 +192,13 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     <fs_fcat>-scrtext_m = VALUE #( lt_coldescr[ rollname = <fs_fcat>-ref_field ]-scrtext_m OPTIONAL ).
 
     LOOP AT it_custom_fc ASSIGNING FIELD-SYMBOL(<fs_custom_fc>) WHERE fieldname EQ <fs_fcat>-fieldname.
-     ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp>).
+
+      ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp>).
       IF sy-subrc EQ 0.
         <fs_comp> =  CONV #( <fs_custom_fc>-value ).
       ENDIF.
     ENDLOOP.
+
   ENDLOOP.
 
 
@@ -210,6 +219,16 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ALV_MANAGER->HANDLE_DATA_CHANGED
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] ER_DATA_CHANGED                LIKE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method HANDLE_DATA_CHANGED.
+    PERFORM handle_data_changed IN PROGRAM (gv_program_name) IF FOUND USING er_data_changed.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method ZCL_ALV_MANAGER->HANDLE_TOOLBAR
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] E_OBJECT                       LIKE
@@ -218,9 +237,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   METHOD handle_toolbar.
 
     " Append dei bottoni custom alla toolbar standard
-    LOOP AT gt_toolbar_button ASSIGNING FIELD-SYMBOL(<fs_toolbar>).
-      APPEND <fs_toolbar>-ls_btn TO e_object->mt_toolbar.
-    ENDLOOP.
+    PERFORM handle_toolbar IN PROGRAM (gv_program_name) IF FOUND USING e_object e_interactive.
 
   ENDMETHOD.
 
