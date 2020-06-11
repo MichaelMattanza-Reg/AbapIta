@@ -6,6 +6,7 @@ Questa classe può essere utilizzata per gestire toolbar e tabelle utilizzate da
 - **Metodi**: 
   - *Handle_toolbar* ( aggiunge bottoni sulla toolbar )
   - *Handle_user_command* ( gestione dei vari bottoni )
+  - *Handle_data_changed* ( gestione dati in alv )
   - *Top_of_page* ( Evento TOP_OF_PAGE )
   - *Create_dyn_fc* ( crea il field catalog dinamico - Privato -> chiamato dal costruttore )
   - *Constructor* ( costruttore )
