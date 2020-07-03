@@ -72,6 +72,8 @@
 
 **NACE:** Visualizzare tipologia messaggi
 
+**OMJJ:** View tipi movimento
+
 **PFCG:** Ruoli autorizzativi
 
 **PFTC:** Workflow creazione/modifica/visualizzazione
