@@ -64,6 +64,8 @@
 
 **ME9L:** Output messaggi ( Schedulazione accordi / piano di consegna testata)
 
+**MELB:** Requirement tracking number
+
 **MM01 / MM02 / MM03:** Anagrafica materiale
 
 **MSC3N:** Visualizzare dati partita
