@@ -2,16 +2,6 @@
 Questa classe può essere utilizzata per gestire toolbar e tabelle utilizzate da un’alv. E’ una classe generale quindi NON deve essere inserito del codice per un report specifico.
 <br><br>
 
-- **Classe**: *ZCL_ALV_MANAGER*
-- **Metodi**: 
-  - *Handle_toolbar* ( aggiunge bottoni sulla toolbar )
-  - *Handle_user_command* ( gestione dei vari bottoni )
-  - *Handle_data_changed* ( gestione dati in alv )
-  - *Top_of_page* ( Evento TOP_OF_PAGE )
-  - *Create_dyn_fc* ( crea il field catalog dinamico - Privato -> chiamato dal costruttore )
-  - *Constructor* ( costruttore )
-  - *Get_fcat* ( Ritorna il field catalog della tabella - PUBBLICO )<br><br>
-
 ATTENZIONE<br>
 Il metodo create_dyn_fc riceve in input il tipo tabella ZT_FC_CUSTOM. Se si vuole modificare un componente del field catalog si può inserire la modifica in questa tabella valorizzando i campi:
   - *FIELDNAME:* nome del campo della tabella di output ( es. matnr )
@@ -54,6 +44,9 @@ public section.
     for event USER_COMMAND of CL_GUI_ALV_GRID
     importing
       !E_UCOMM .
+  methods handle_hotspot_click
+    FOR EVENT hotspot_click OF cl_gui_alv_grid
+    IMPORTING e_row_id e_column_id es_row_no.
   methods HANDLE_DATA_CHANGED
     for event DATA_CHANGED of CL_GUI_ALV_GRID
     importing
@@ -225,6 +218,18 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method HANDLE_DATA_CHANGED.
     PERFORM handle_data_changed IN PROGRAM (gv_program_name) IF FOUND USING er_data_changed.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ALV_MANAGER->HANDLE_HOTSPOT_CLICK
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] E_ROW_ID                       LIKE
+* | [--->] E_COLUMN_ID                    LIKE
+* | [--->] ES_ROW_NO                      LIKE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method handle_hotspot_click.
+    PERFORM handle_hotspot_click IN PROGRAM (gv_program_name) IF FOUND USING e_row_id e_column_id es_row_no.
   endmethod.
 
 
