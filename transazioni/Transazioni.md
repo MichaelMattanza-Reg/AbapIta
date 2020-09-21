@@ -44,6 +44,8 @@
 
 **IW33:** Ordine di manuntenzione
 
+**MASS**: transazione di mantenimento
+
 **MB01 / MB02 / MB03 / MIGO:** Movimento merci
 
 **MB52:** Visualizzare stock magazzino per materiale
