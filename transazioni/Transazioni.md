@@ -166,7 +166,7 @@
 
 **SMARTSTYLES:** Creare, modificare visualizzare stili per smartforms
 
-**SMICM**: Monitor ICM
+**SMICM:** Monitor ICM
 
 **SMOD:** Ampliamenti
 
@@ -175,6 +175,8 @@
 **SO03:** Business workplace
 
 **SO10:** Testi standard
+
+**SO15 / SO23:** Distribution List
 
 **SOST:** Coda delle mail
 
