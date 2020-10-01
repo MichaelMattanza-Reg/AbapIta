@@ -264,9 +264,9 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     " Chiamo il perform in base alla funzione passata e al numero righe selezionate
     DATA(ls_button_triggered) = VALUE #( gt_toolbar_button[ ls_btn-function = e_ucomm ] OPTIONAL ).
     IF ls_button_triggered-has_param EQ 'X'.
-      PERFORM (e_ucomm) IN PROGRAM (gv_program_name) IF FOUND USING lt_rows.
+      PERFORM handle_user_command IN PROGRAM (gv_program_name) IF FOUND USING lt_rows e_ucomm.
     ELSE.
-      PERFORM (e_ucomm) IN PROGRAM (gv_program_name) IF FOUND.
+      PERFORM handle_user_command IN PROGRAM (gv_program_name) IF FOUND USING e_ucomm.
     ENDIF.
 
   ENDMETHOD.
