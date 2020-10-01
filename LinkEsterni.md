@@ -25,6 +25,9 @@
   
 - Dynamic Code
   - https://itpsap.com/abap-dynamic-programming-part-5/
+
+- Goods movements
+  - https://wiki.scn.sap.com/wiki/display/ERPSCM/Goods+Movements+with+BAPI#:~:text=There%20are%20two%20BAPIs%20for,only%20for%20reverting%20Goods%20Movements)
   
 - Idoc
   - https://www.guru99.com/all-about-idocdefinition-architecture-implementation.html
