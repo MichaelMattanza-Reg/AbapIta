@@ -22,15 +22,9 @@ public section.
         fc_component TYPE char255,
         value        TYPE char255,
       END OF ty_fc_custom .
-  types:
-    BEGIN OF ty_button_toolbar,
-        ls_btn    TYPE stb_button,
-        has_param TYPE flag,
-      END OF ty_button_toolbar .
+
   types:
     tty_fc_custom TYPE table OF ty_fc_custom .
-  types:
-    tty_button_toolbar TYPE TABLE OF ty_button_toolbar .
 
   data GO_ALV type ref to CL_GUI_ALV_GRID .
   data GV_PROGRAM_NAME type STRING .
@@ -60,7 +54,6 @@ public section.
       value(IV_PROGRAM_NAME) type STRING
       value(IT_OUTTAB) type ANY
       value(IO_ALV) type ref to CL_GUI_ALV_GRID
-      value(IT_TOOLBAR_BUTTON) type TTY_BUTTON_TOOLBAR optional
       value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional .
   methods GET_FCAT
     returning
@@ -68,7 +61,6 @@ public section.
 protected section.
 
   data GT_FCAT type LVC_T_FCAT .
-  data GT_TOOLBAR_BUTTON type TTY_BUTTON_TOOLBAR .
 private section.
 
   methods CREATE_DYN_FC
@@ -90,7 +82,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * | [--->] IV_PROGRAM_NAME                TYPE        STRING
 * | [--->] IT_OUTTAB                      TYPE        ANY
 * | [--->] IO_ALV                         TYPE REF TO CL_GUI_ALV_GRID
-* | [--->] IT_TOOLBAR_BUTTON              TYPE        TTY_BUTTON_TOOLBAR(optional)
 * | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method CONSTRUCTOR.
@@ -104,7 +95,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     " Salvo internamente i dati in input
     go_alv = io_alv.
     gv_program_name = iv_program_name.
-    gt_toolbar_button = it_toolbar_button.
 
     " Creo una tabella indicizzata
     CREATE DATA lref_outtab LIKE it_outtab.
@@ -131,10 +121,15 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method CREATE_DYN_FC.
+    TYPES: BEGIN OF ty_dd04t,
+            rollname TYPE rollname,
+            scrtext_m TYPE scrtext_m,
+           END OF ty_dd04t.
 
      DATA : lo_ref_descr TYPE REF TO cl_abap_structdescr,
             lt_detail    TYPE abap_compdescr_tab,
             lt_field_det TYPE REF TO cl_abap_structdescr,
+            lt_coldescr  TYPE TABLE OF ty_dd04t,
             ls_detail    LIKE LINE OF lt_detail,
             lref_typedescr TYPE REF TO cl_abap_typedescr,
             lref_elemdescr TYPE REF TO cl_abap_elemdescr,
@@ -170,7 +165,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   " Estraggo descrizioni colonne std
    SELECT rollname, scrtext_m
     FROM dd04t
-    INTO TABLE @DATA(lt_coldescr)
+    INTO TABLE @lt_coldescr
     FOR ALL ENTRIES IN @ct_fieldcat
     WHERE rollname EQ @ct_fieldcat-ref_field
     AND ddlanguage EQ @sy-langu.
@@ -182,13 +177,14 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
   " Applico le modifiche custom ai campi del fc
   LOOP AT ct_fieldcat ASSIGNING FIELD-SYMBOL(<fs_fcat>).
-    <fs_fcat>-scrtext_m = VALUE #( lt_coldescr[ rollname = <fs_fcat>-ref_field ]-scrtext_m OPTIONAL ).
+    READ TABLE lt_coldescr INTO DATA(ls_coldescr) WITH KEY rollname = <fs_fcat>-ref_field.
+    <fs_fcat>-scrtext_m = ls_coldescr-scrtext_m.
 
     LOOP AT it_custom_fc ASSIGNING FIELD-SYMBOL(<fs_custom_fc>) WHERE fieldname EQ <fs_fcat>-fieldname.
 
       ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp>).
       IF sy-subrc EQ 0.
-        <fs_comp> =  CONV #( <fs_custom_fc>-value ).
+        <fs_comp> =  <fs_custom_fc>-value.
       ENDIF.
     ENDLOOP.
 
@@ -261,13 +257,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
       IMPORTING
         et_index_rows = lt_rows.
 
-    " Chiamo il perform in base alla funzione passata e al numero righe selezionate
-    DATA(ls_button_triggered) = VALUE #( gt_toolbar_button[ ls_btn-function = e_ucomm ] OPTIONAL ).
-    IF ls_button_triggered-has_param EQ 'X'.
-      PERFORM handle_user_command IN PROGRAM (gv_program_name) IF FOUND USING lt_rows e_ucomm.
-    ELSE.
-      PERFORM handle_user_command IN PROGRAM (gv_program_name) IF FOUND USING e_ucomm.
-    ENDIF.
+     PERFORM handle_user_command IN PROGRAM (gv_program_name) IF FOUND USING e_ucomm lt_rows.
 
   ENDMETHOD.
 
