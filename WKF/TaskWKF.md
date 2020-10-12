@@ -53,7 +53,7 @@ Creare nella classe un metodo che fa il raise del wkf.
       CATCH cx_swf_cnt_container.
 
     ENDTRY.
-
+    COMMIT WORK.
   endmethod.
 ```
 
