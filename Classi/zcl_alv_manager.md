@@ -120,78 +120,115 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
 * | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
-  method CREATE_DYN_FC.
+   METHOD create_dyn_fc.
     TYPES: BEGIN OF ty_dd04t,
-            rollname TYPE rollname,
-            scrtext_m TYPE scrtext_m,
-           END OF ty_dd04t.
+             rollname  TYPE rollname,
+             scrtext_m TYPE scrtext_m,
+           END OF ty_dd04t,
+           BEGIN OF ty_dd03t,
+             fieldname  TYPE dd03t-fieldname,
+             ddtext TYPE dd03t-ddtext,
+           END OF ty_dd03t,
+           BEGIN OF ty_dd01l,
+             domname  TYPE dd01l-domname,
+             convexit TYPE dd01l-convexit,
+           END OF ty_dd01l.
 
-     DATA : lo_ref_descr TYPE REF TO cl_abap_structdescr,
-            lt_detail    TYPE abap_compdescr_tab,
-            lt_field_det TYPE REF TO cl_abap_structdescr,
-            lt_coldescr  TYPE TABLE OF ty_dd04t,
-            ls_detail    LIKE LINE OF lt_detail,
-            lref_typedescr TYPE REF TO cl_abap_typedescr,
-            lref_elemdescr TYPE REF TO cl_abap_elemdescr,
-            lv_counter   TYPE i VALUE 0.
+    DATA : lo_ref_descr   TYPE REF TO cl_abap_structdescr,
+           lt_detail      TYPE abap_compdescr_tab,
+           lt_field_det   TYPE REF TO cl_abap_structdescr,
+           lt_coldescr    TYPE TABLE OF ty_dd04t,
+           lt_dd03t       TYPE TABLE OF ty_dd03t,
+           lt_dd01l       TYPE TABLE OF ty_dd01l,
+           ls_detail      LIKE LINE OF lt_detail,
+           lref_typedescr TYPE REF TO cl_abap_typedescr,
+           lref_elemdescr TYPE REF TO cl_abap_elemdescr,
+           lv_counter     TYPE i VALUE 0.
 
-  FIELD-SYMBOLS: <fs_dref>  TYPE any,
-                 <fs_fname> TYPE any.
+    FIELD-SYMBOLS: <fs_dref>  TYPE any,
+                   <fs_fname> TYPE any.
 
-  lo_ref_descr ?= cl_abap_typedescr=>describe_by_data( is_outtab ). "Chiamare metodo statico su una struttura
-  lt_detail[] = lo_ref_descr->components.
+    lo_ref_descr ?= cl_abap_typedescr=>describe_by_data( is_outtab ). "Chiamare metodo statico su una struttura
+    lt_detail[] = lo_ref_descr->components.
 
-  " Loop sui componenti della struttura - Creo fc
-  LOOP AT lt_detail INTO ls_detail.
-    ASSIGN COMPONENT ls_detail-name OF STRUCTURE is_outtab TO FIELD-SYMBOL(<ls_comp>).
 
-    IF <ls_comp> IS ASSIGNED.
-      ADD 1 TO lv_counter.
+    " Loop sui componenti della struttura - Creo fc
+    LOOP AT lt_detail INTO ls_detail.
+      ASSIGN COMPONENT ls_detail-name OF STRUCTURE is_outtab TO FIELD-SYMBOL(<ls_comp>).
 
-      lref_typedescr = cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
-      lref_elemdescr ?= cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
+      IF <ls_comp> IS ASSIGNED.
+        ADD 1 TO lv_counter.
 
-      APPEND VALUE #(
-        ref_field = lref_typedescr->absolute_name+6
-        fieldname = ls_detail-name
-        outputlen = COND #( WHEN lref_typedescr->type_kind EQ 'P' THEN lref_elemdescr->output_length ELSE lref_typedescr->length )
-        col_id    = lv_counter
-        decimals_o = lref_typedescr->decimals
-      ) TO ct_fieldcat.
+        lref_typedescr = cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
+        lref_elemdescr ?= cl_abap_typedescr=>describe_by_data( <ls_comp> ) .
 
-    ENDIF.
-  ENDLOOP.
+        APPEND VALUE #(
+          ref_field = lref_typedescr->absolute_name+6
+          fieldname = ls_detail-name
+          outputlen = COND #( WHEN lref_typedescr->type_kind EQ 'P' THEN lref_elemdescr->output_length ELSE lref_typedescr->length )
+          col_id    = lv_counter
+          decimals_o = lref_typedescr->decimals
+        ) TO ct_fieldcat.
 
-  " Estraggo descrizioni colonne std
-   SELECT rollname, scrtext_m
-    FROM dd04t
-    INTO TABLE @lt_coldescr
-    FOR ALL ENTRIES IN @ct_fieldcat
-    WHERE rollname EQ @ct_fieldcat-ref_field
-    AND ddlanguage EQ @sy-langu.
-
-   " Trasformo i campi inseriti dall'utente in upper case per evitare errori
-  LOOP AT it_custom_fc REFERENCE INTO DATA(lr_cust_fc).
-    TRANSLATE lr_cust_fc->fieldname TO UPPER CASE.
-  ENDLOOP.
-
-  " Applico le modifiche custom ai campi del fc
-  LOOP AT ct_fieldcat ASSIGNING FIELD-SYMBOL(<fs_fcat>).
-    READ TABLE lt_coldescr INTO DATA(ls_coldescr) WITH KEY rollname = <fs_fcat>-ref_field.
-    <fs_fcat>-scrtext_m = ls_coldescr-scrtext_m.
-
-    LOOP AT it_custom_fc ASSIGNING FIELD-SYMBOL(<fs_custom_fc>) WHERE fieldname EQ <fs_fcat>-fieldname.
-
-      ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp>).
-      IF sy-subrc EQ 0.
-        <fs_comp> =  <fs_custom_fc>-value.
       ENDIF.
     ENDLOOP.
 
-  ENDLOOP.
+    " Estraggo descrizioni colonne std
+    SELECT rollname, scrtext_m
+     FROM dd04t
+     INTO TABLE @lt_coldescr
+     FOR ALL ENTRIES IN @ct_fieldcat
+     WHERE rollname EQ @ct_fieldcat-ref_field
+     AND ddlanguage EQ @sy-langu.
 
+    SELECT domname, convexit
+     FROM dd01l
+     INTO CORRESPONDING FIELDS OF TABLE @lt_dd01l
+     FOR ALL ENTRIES IN @ct_fieldcat
+     WHERE domname EQ @ct_fieldcat-fieldname
+     AND as4local EQ 'A'
+     AND as4vers EQ ' '.
+  
+  " Estraggo la descrizione degli elementi senza dominio
+    SELECT fieldname, ddtext
+      FROM dd03t
+      INTO CORRESPONDING FIELDS OF TABLE @lt_dd03t
+      FOR ALL ENTRIES IN @ct_fieldcat
+      WHERE fieldname EQ @ct_fieldcat-fieldname
+      AND ddlanguage EQ @sy-langu.
 
-  endmethod.
+    " Trasformo i campi inseriti dall'utente in upper case per evitare errori
+    LOOP AT it_custom_fc REFERENCE INTO DATA(lr_cust_fc).
+      TRANSLATE lr_cust_fc->fieldname TO UPPER CASE.
+    ENDLOOP.
+
+    " Applico le modifiche custom ai campi del fc
+    LOOP AT ct_fieldcat ASSIGNING FIELD-SYMBOL(<fs_fcat>).
+
+      " Inserisco la descrizione del dominio nella colonna
+      READ TABLE lt_coldescr INTO DATA(ls_coldescr) WITH KEY rollname = <fs_fcat>-ref_field.
+      IF ls_coldescr-scrtext_m IS NOT INITIAL.
+        <fs_fcat>-coltext = <fs_fcat>-scrtext_m = ls_coldescr-scrtext_m.
+      ELSE.
+        READ TABLE lt_dd03t INTO DATA(ls_dd03t) WITH KEY fieldname = <fs_fcat>-fieldname.
+        <fs_fcat>-coltext = <fs_fcat>-scrtext_m = ls_dd03t-ddtext.
+      ENDIF.
+
+      READ TABLE lt_dd01l INTO DATA(ls_dd01l) WITH KEY domname = <fs_fcat>-fieldname.
+      <fs_fcat>-convexit = ls_dd01l-convexit.
+
+      LOOP AT it_custom_fc ASSIGNING FIELD-SYMBOL(<fs_custom_fc>) WHERE fieldname EQ <fs_fcat>-fieldname.
+
+        ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp>).
+        IF sy-subrc EQ 0.
+          <fs_comp> =  <fs_custom_fc>-value.
+        ENDIF.
+      ENDLOOP.
+
+      CLEAR: ls_dd03t, ls_dd01l, ls_coldescr.
+    ENDLOOP.
+
+  ENDMETHOD.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
