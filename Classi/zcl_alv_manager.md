@@ -125,10 +125,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
              rollname  TYPE rollname,
              scrtext_m TYPE scrtext_m,
            END OF ty_dd04t,
-           BEGIN OF ty_dd03t,
-             fieldname  TYPE dd03t-fieldname,
-             ddtext TYPE dd03t-ddtext,
-           END OF ty_dd03t,
            BEGIN OF ty_dd01l,
              domname  TYPE dd01l-domname,
              convexit TYPE dd01l-convexit,
@@ -138,7 +134,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
            lt_detail      TYPE abap_compdescr_tab,
            lt_field_det   TYPE REF TO cl_abap_structdescr,
            lt_coldescr    TYPE TABLE OF ty_dd04t,
-           lt_dd03t       TYPE TABLE OF ty_dd03t,
            lt_dd01l       TYPE TABLE OF ty_dd01l,
            ls_detail      LIKE LINE OF lt_detail,
            lref_typedescr TYPE REF TO cl_abap_typedescr,
@@ -188,14 +183,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
      WHERE domname EQ @ct_fieldcat-fieldname
      AND as4local EQ 'A'
      AND as4vers EQ ' '.
-  
-  " Estraggo la descrizione degli elementi senza dominio
-    SELECT fieldname, ddtext
-      FROM dd03t
-      INTO CORRESPONDING FIELDS OF TABLE @lt_dd03t
-      FOR ALL ENTRIES IN @ct_fieldcat
-      WHERE fieldname EQ @ct_fieldcat-fieldname
-      AND ddlanguage EQ @sy-langu.
+
 
     " Trasformo i campi inseriti dall'utente in upper case per evitare errori
     LOOP AT it_custom_fc REFERENCE INTO DATA(lr_cust_fc).
@@ -206,13 +194,8 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     LOOP AT ct_fieldcat ASSIGNING FIELD-SYMBOL(<fs_fcat>).
 
       " Inserisco la descrizione del dominio nella colonna
-      READ TABLE lt_coldescr INTO DATA(ls_coldescr) WITH KEY rollname = <fs_fcat>-ref_field.
-      IF ls_coldescr-scrtext_m IS NOT INITIAL.
+        READ TABLE lt_coldescr INTO DATA(ls_coldescr) WITH KEY rollname = <fs_fcat>-ref_field.
         <fs_fcat>-coltext = <fs_fcat>-scrtext_m = ls_coldescr-scrtext_m.
-      ELSE.
-        READ TABLE lt_dd03t INTO DATA(ls_dd03t) WITH KEY fieldname = <fs_fcat>-fieldname.
-        <fs_fcat>-coltext = <fs_fcat>-scrtext_m = ls_dd03t-ddtext.
-      ENDIF.
 
       READ TABLE lt_dd01l INTO DATA(ls_dd01l) WITH KEY domname = <fs_fcat>-fieldname.
       <fs_fcat>-convexit = ls_dd01l-convexit.
@@ -225,7 +208,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
         ENDIF.
       ENDLOOP.
 
-      CLEAR: ls_dd03t, ls_dd01l, ls_coldescr.
+      CLEAR: ls_dd01l, ls_coldescr.
     ENDLOOP.
 
   ENDMETHOD.
