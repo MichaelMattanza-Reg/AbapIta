@@ -284,6 +284,13 @@ CLASS zcl_alv_manager IMPLEMENTATION.
 
         <fs_fcat>-coltext = <fs_fcat>-scrtext_m = ls_col_text-value.
       ENDIF.
+      LOOP AT it_custom_fc ASSIGNING FIELD-SYMBOL(<fs_custom_fc>) WHERE fieldname EQ <fs_fcat>-fieldname.
+
+        ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp_fcat>).
+        IF sy-subrc EQ 0.
+          <fs_comp_fcat> =  <fs_custom_fc>-value.
+        ENDIF.
+      ENDLOOP.
     ENDLOOP.
 
   ENDMETHOD.
