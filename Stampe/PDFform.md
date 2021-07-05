@@ -121,120 +121,83 @@ La stampa viene lanciata con un messaggio specifico. I vari dati di questo messa
 **Mandare una stampa tramite mail ( n. allegati pdf )**
 
  ```abap
-  DATA:ls_outpar           TYPE sfpoutputparams,
-       lv_fm_name          TYPE rs38l_fnam,
-       ls_printdata        TYPE zvalutazione_fornitori,
-       ls_output           TYPE fpformoutput,
+ DATA:
+    lv_fm_name      TYPE rs38l_fnam,
+    ls_output       TYPE fpformoutput,
+    lo_pdf_content  TYPE solix_tab,
 
-       lo_pdf_content         TYPE solix_tab,
-       pdf_xstring         TYPE xstring,
-       lv_subject          TYPE char255 VALUE 'Valutazione',
-       lv_type_attachement TYPE so_obj_tp VALUE 'PDF',
+    " Gestione mail
+    lo_send_request TYPE REF TO cl_bcs,
+    lo_document     TYPE REF TO cl_document_bcs,
+    lo_recipient    TYPE REF TO if_recipient_bcs,
 
-       " Gestione mail
-       lo_send_request     TYPE REF TO cl_bcs,
-       lo_document         TYPE REF TO cl_document_bcs,
-       lt_body             TYPE bcsy_text,
-       lv_sent_to_all      TYPE os_boolean,
-       lo_recipient        TYPE REF TO if_recipient_bcs,
-       lx_document_bcs     TYPE REF TO cx_document_bcs VALUE IS INITIAL,
-       lt_solix            TYPE TABLE OF solix.
+    lv_sent_to_all  TYPE os_boolean,
+    lv_image_xstring TYPE xstring,
+    lx_document_bcs TYPE REF TO cx_document_bcs VALUE IS INITIAL.
+    
+    DATA(ls_outpar) = VALUE sfpoutputparams( nopreview = 'X' getpdf = 'X' nodialog  = 'X' dest = 'LP01' ).
+
+    CALL FUNCTION 'FP_JOB_OPEN'
+      CHANGING
+        ie_outputparams = ls_outpar
+      EXCEPTIONS
+        cancel          = 1
+        usage_error     = 2
+        system_error    = 3
+        internal_error  = 4
+        OTHERS          = 5.
+
+    CALL FUNCTION lv_fm_name
+      EXPORTING
+        is_printdata       = ls_print_data
+      IMPORTING
+        /1bcdwb/formoutput = ls_output
+      EXCEPTIONS
+        usage_error        = 1
+        system_error       = 2
+        internal_error     = 3
+        OTHERS             = 4.
 
 
-  ls_printdata-lifnr = lv_lifnr.
-  ls_printdata-datum = sy-datum.
-  ls_printdata-gjahr = sy-datum(4).
-  ls_printdata-prec_gjahr = CONV #( sy-datum(4) - 1 ).
-  ls_printdata-punteggio = lv_punteggio.
-  ls_printdata-demerito  = lv_demerito.
+    TRY.
+        " Allego stampa
+        lo_send_request = cl_bcs=>create_persistent( ).
+        lo_pdf_content = cl_bcs_convert=>xstring_to_solix( iv_xstring = ls_output-pdf ).
 
-  SELECT SINGLE adrnr
-    FROM lfa1
-    WHERE lifnr EQ @ls_printdata-lifnr
-    INTO @ls_printdata-adrnr.
+        DATA(lv_size) = CONV so_obj_len( xstrlen( ls_output-pdf ) ).
 
-  " Provo a leggere il nome del function module
-  TRY .
-      CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
-        EXPORTING
-          i_name     = 'ZQM_VALUTAZIONE_FORNITORI'
-        IMPORTING
-          e_funcname = lv_fm_name.
+        lo_document = cl_document_bcs=>create_document(
+                        i_type    = CONV so_obj_tp('PDF')
+                        i_hex    = lo_pdf_content
+                        i_length = lv_size
+                        i_subject = CONV so_obj_des( |Lista Entrato Giornaliero| )
+                   ).
 
-  ENDTRY.
+        lo_send_request->set_document( lo_document ).
+        lo_recipient = cl_cam_address_bcs=>create_internet_address(
+             i_address_string = |{ <fs_partner>-smtp_address }|
+        ).
+        lo_send_request->add_recipient( i_recipient = lo_recipient ).
 
-  ls_outpar-nopreview = 'X'.
-  ls_outpar-getpdf    = 'X'.
-  ls_outpar-nodialog  = 'X'.
-  ls_outpar-dest      = 'LP01'.
+        lv_sent_to_all = lo_send_request->send(
+          i_with_error_screen = 'X'
+         ).
 
-  CALL FUNCTION 'FP_JOB_OPEN'
-    CHANGING
-      ie_outputparams = ls_outpar
-    EXCEPTIONS
-      cancel          = 1
-      usage_error     = 2
-      system_error    = 3
-      internal_error  = 4
-      OTHERS          = 5.
+        COMMIT WORK.
 
-  CALL FUNCTION lv_fm_name
-    EXPORTING
-      is_printdata       = ls_printdata " Struttura che passo
-    IMPORTING
-      /1bcdwb/formoutput = ls_output
-    EXCEPTIONS
-      usage_error        = 1
-      system_error       = 2
-      internal_error     = 3
-      OTHERS             = 4.
+      CATCH cx_root INTO DATA(lx_root_exception).
 
-   lt_solix = cl_bcs_convert=>xstring_to_solix( iv_xstring = ls_output-pdf ).
-  DATA(lv_size) = CONV so_obj_len( xstrlen( pdf_xstring ) ).
+        MESSAGE ID   sy-msgid
+              TYPE   sy-msgty
+              NUMBER sy-msgno
+              WITH   sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
 
-  TRY.
-    " Allego stampa
-      lo_send_request = cl_bcs=>create_persistent( ).
-      lo_pdf_content = cl_document_bcs=>xstring_to_solix( ls_output-pdf ).
+    ENDTRY.
 
-      lo_document = cl_document_bcs=>create_document(
-                      i_type    = CONV so_obj_tp('PDF')
-                      i_hex    = lt_solix
-                      i_length = lv_size
-                      i_subject = CONV so_obj_des( |{ lv_subject }| )
-                 ).
-
-      lt_solix = cl_bcs_convert=>xstring_to_solix( iv_xstring = lv_xstring ).
-      lv_size = CONV so_obj_len( xstrlen( pdf_xstring ) ).
-      lo_pdf_content = cl_document_bcs=>xstring_to_solix( lv_xstring ).
-
-      lo_document->add_attachment(
-        EXPORTING
-          i_attachment_type     = CONV so_obj_tp('PDF')
-          i_attachment_subject  = CONV so_obj_des( |MD159| )
-          i_attachment_size     = lv_size
-          i_att_content_hex     = lt_solix
-      ).
-
-      lo_send_request->set_document( lo_document ).
-      lo_recipient = cl_cam_address_bcs=>create_internet_address(
-           i_address_string = |{ lv_mail }|
-      ).
-      lo_send_request->add_recipient( i_recipient = lo_recipient ).
-
-      lv_sent_to_all = lo_send_request->send(
-        i_with_error_screen = 'X'
-       ).
-
-      COMMIT WORK.
-
-    CATCH cx_document_bcs INTO lx_document_bcs.
-  ENDTRY.
-
-  CALL FUNCTION 'FP_JOB_CLOSE'
-    EXCEPTIONS
-      usage_error    = 1
-      system_error   = 2
-      internal_error = 3
-      OTHERS         = 4.
+    CALL FUNCTION 'FP_JOB_CLOSE'
+      EXCEPTIONS
+        usage_error    = 1
+        system_error   = 2
+        internal_error = 3
+        OTHERS         = 4.
  ```
