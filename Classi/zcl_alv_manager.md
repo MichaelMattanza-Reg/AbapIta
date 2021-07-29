@@ -168,7 +168,6 @@ CLASS zcl_alv_manager IMPLEMENTATION.
       ASSIGN COMPONENT <fs_detail>-name OF STRUCTURE is_outtab TO FIELD-SYMBOL(<fs_outtab_comp>).
 
       IF <fs_outtab_comp> IS ASSIGNED.
-        ADD 1 TO lv_counter.
 
         lref_typedescr = cl_abap_typedescr=>describe_by_data( <fs_outtab_comp> ) .
         lref_elemdescr ?= cl_abap_typedescr=>describe_by_data( <fs_outtab_comp> ) .
@@ -177,8 +176,8 @@ CLASS zcl_alv_manager IMPLEMENTATION.
           ref_field = lref_typedescr->absolute_name+6
           fieldname = <fs_detail>-name
           outputlen = COND #( WHEN lref_typedescr->type_kind EQ 'P' THEN lref_elemdescr->output_length ELSE lref_typedescr->length )
-          col_id    = lv_counter
           decimals_o = lref_typedescr->decimals
+          col_opt = 'X'
         ) TO ct_fieldcat.
 
       ENDIF.
@@ -203,7 +202,7 @@ CLASS zcl_alv_manager IMPLEMENTATION.
 
     SELECT fieldname, ddtext
     FROM dd03t
-    WHERE tabname EQ @lo_ref_descr->absolute_name
+    WHERE tabname EQ @lo_ref_descr->absolute_name+6
     AND ddlanguage EQ @sy-langu
     AND as4local EQ 'A'
     INTO TABLE @DATA(lt_dd03t).
@@ -237,6 +236,11 @@ CLASS zcl_alv_manager IMPLEMENTATION.
         ENDIF.
       ENDLOOP.
 
+      IF <fs_fcat>-col_id IS INITIAL.
+        ADD 1 TO lv_counter.
+        <fs_fcat>-col_id = <fs_fcat>-col_pos = lv_counter.
+      ENDIF.
+
       CLEAR: ls_dd01l, ls_coldescr.
     ENDLOOP.
 
@@ -269,7 +273,6 @@ CLASS zcl_alv_manager IMPLEMENTATION.
       DATA(ls_col_text) = VALUE #(  element_annos[ elementname = <fs_detail>-name annoname = 'ENDUSERTEXT.LABEL' ] OPTIONAL ).
 
       IF <fs_comp> IS ASSIGNED.
-        ADD 1 TO lv_counter.
 
         lref_typedescr = cl_abap_typedescr=>describe_by_data( <fs_comp> ) .
         lref_elemdescr ?= cl_abap_typedescr=>describe_by_data( <fs_comp> ) .
@@ -278,8 +281,8 @@ CLASS zcl_alv_manager IMPLEMENTATION.
           ref_field = lref_typedescr->absolute_name+6
           fieldname = <fs_detail>-name
           outputlen = COND #( WHEN lref_typedescr->type_kind EQ 'P' THEN lref_elemdescr->output_length ELSE lref_typedescr->length )
-          col_id    = lv_counter
           decimals_o = lref_typedescr->decimals
+          col_opt = 'X'
         ) TO ct_fieldcat ASSIGNING FIELD-SYMBOL(<fs_fcat>).
 
         <fs_fcat>-coltext = <fs_fcat>-scrtext_m = ls_col_text-value.
@@ -291,6 +294,12 @@ CLASS zcl_alv_manager IMPLEMENTATION.
           <fs_comp_fcat> =  <fs_custom_fc>-value.
         ENDIF.
       ENDLOOP.
+
+      IF <fs_fcat>-col_id IS INITIAL.
+        ADD 1 TO lv_counter.
+        <fs_fcat>-col_id = <fs_fcat>-col_pos = lv_counter.
+      ENDIF.
+
     ENDLOOP.
 
   ENDMETHOD.
