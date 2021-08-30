@@ -202,7 +202,7 @@ CLASS zcl_alv_manager IMPLEMENTATION.
 
     SELECT fieldname, ddtext
     FROM dd03t
-    WHERE tabname EQ @lo_ref_descr->absolute_name+6
+    WHERE tabname EQ @lo_ref_descr->absolute_name+6(30)
     AND ddlanguage EQ @sy-langu
     AND as4local EQ 'A'
     INTO TABLE @DATA(lt_dd03t).
