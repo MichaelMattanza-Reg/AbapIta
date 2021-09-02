@@ -21,13 +21,23 @@ CLASS zcl_alv_manager DEFINITION
         fieldname    TYPE char255,
         fc_component TYPE char255,
         value        TYPE char255,
-      END OF ty_fc_custom .
+      END OF ty_fc_custom,
+      BEGIN OF ty_handler,
+        nr_alv       TYPE i,
+        handler_name TYPE string,
+      END OF ty_handler.
 
+    TYPES:
+      tty_handler TYPE TABLE OF ty_handler .
     TYPES:
       tty_fc_custom TYPE TABLE OF ty_fc_custom .
 
+
     DATA go_alv TYPE REF TO cl_gui_alv_grid .
     DATA gv_program_name TYPE string .
+    DATA gt_fcat TYPE lvc_t_fcat .
+    DATA gt_second_fcat TYPE lvc_t_fcat .
+    DATA gt_handler TYPE tty_handler.
 
     METHODS handle_toolbar
       FOR EVENT toolbar OF cl_gui_alv_grid
@@ -48,24 +58,43 @@ CLASS zcl_alv_manager DEFINITION
     METHODS top_of_page
       FOR EVENT top_of_page OF cl_gui_alv_grid
       IMPORTING
-        !e_dyndoc_id .
+        !e_dyndoc_id.
+
     METHODS constructor
       IMPORTING
         VALUE(iv_program_name) TYPE string
         VALUE(iv_cds_name)     TYPE string OPTIONAL
         VALUE(iv_charact_fc)   TYPE flag OPTIONAL
         VALUE(it_outtab)       TYPE any
-        VALUE(io_alv)          TYPE REF TO cl_gui_alv_grid
+        VALUE(io_alv)          TYPE REF TO cl_gui_alv_grid OPTIONAL
         VALUE(it_custom_fc)    TYPE tty_fc_custom OPTIONAL .
     METHODS get_fcat
       RETURNING
         VALUE(rt_fcat) TYPE lvc_t_fcat .
 
+    METHODS set_second_table
+      IMPORTING
+        VALUE(it_outtab)     TYPE any
+        VALUE(it_custom_fc)  TYPE tty_fc_custom OPTIONAL
+        VALUE(iv_cds_name)   TYPE string OPTIONAL
+        VALUE(iv_charact_fc) TYPE flag OPTIONAL.
+
+    METHODS set_handler
+      IMPORTING
+        VALUE(it_handler) TYPE tty_handler.
+
+    METHODS display_data
+      IMPORTING
+        VALUE(it_outtab)        TYPE any
+        VALUE(it_second_outtab) TYPE any OPTIONAL
+        VALUE(iv_vertical)      TYPE flag OPTIONAL.
+
   PROTECTED SECTION.
 
-    DATA gt_fcat TYPE lvc_t_fcat .
+
 
   PRIVATE SECTION.
+
     METHODS create_dyn_fc
       IMPORTING
         VALUE(is_outtab)    TYPE data
@@ -81,19 +110,28 @@ CLASS zcl_alv_manager DEFINITION
       RETURNING
         VALUE(ct_fieldcat)    TYPE lvc_t_fcat .
 
+    METHODS create_fc_from_charact
+      IMPORTING
+        VALUE(is_outtab)    TYPE data
+        VALUE(it_custom_fc) TYPE tty_fc_custom OPTIONAL
+      RETURNING
+        VALUE(ct_fieldcat)  TYPE lvc_t_fcat .
+
 ENDCLASS.
 
 
 
-CLASS zcl_alv_manager IMPLEMENTATION.
+CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method ZCL_ALV_MANAGER->CONSTRUCTOR
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_PROGRAM_NAME                TYPE        STRING
+* | [--->] IV_CDS_NAME                    TYPE        STRING(optional)
+* | [--->] IV_CHARACT_FC                  TYPE        FLAG(optional)
 * | [--->] IT_OUTTAB                      TYPE        ANY
-* | [--->] IO_ALV                         TYPE REF TO CL_GUI_ALV_GRID
+* | [--->] IO_ALV                         TYPE REF TO CL_GUI_ALV_GRID(optional)
 * | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD constructor.
@@ -121,12 +159,14 @@ CLASS zcl_alv_manager IMPLEMENTATION.
 
     " Creo il fc della tabella ricevuta
     IF iv_cds_name IS NOT INITIAL.
-      gt_fcat =  create_fc_from_cds( iv_entity_name = iv_cds_name is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+      gt_fcat = create_fc_from_cds( iv_entity_name = iv_cds_name is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
     ELSE.
       gt_fcat = create_dyn_fc( EXPORTING is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
     ENDIF.
 
-
+    IF iv_charact_fc EQ abap_true.
+      gt_fcat = create_fc_from_charact( is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+    ENDIF.
   ENDMETHOD.
 
 
@@ -237,7 +277,7 @@ CLASS zcl_alv_manager IMPLEMENTATION.
       ENDLOOP.
 
       IF <fs_fcat>-col_id IS INITIAL.
-        ADD 1 TO lv_counter.
+        lv_counter += 1.
         <fs_fcat>-col_id = <fs_fcat>-col_pos = lv_counter.
       ENDIF.
 
@@ -247,6 +287,14 @@ CLASS zcl_alv_manager IMPLEMENTATION.
   ENDMETHOD.
 
 
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ALV_MANAGER->CREATE_FC_FROM_CDS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IS_OUTTAB                      TYPE        DATA
+* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
+* | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD create_fc_from_cds.
 
     DATA : lo_ref_descr   TYPE REF TO cl_abap_structdescr,
@@ -256,13 +304,14 @@ CLASS zcl_alv_manager IMPLEMENTATION.
            lref_elemdescr TYPE REF TO cl_abap_elemdescr.
 
     cl_dd_ddl_annotation_service=>get_annos(
-      EXPORTING entityname = CONV #( iv_entity_name )
+      EXPORTING
+        entityname      = CONV #( iv_entity_name )
       IMPORTING
-          element_annos = DATA(element_annos)
-          entity_annos  = DATA(entity_annos)
-          parameter_annos = DATA(parameter_annos)
-          annos_tstmp     = DATA(annos_tstmp)
-  ).
+        element_annos   = DATA(element_annos)
+        entity_annos    = DATA(entity_annos)
+        parameter_annos = DATA(parameter_annos)
+        annos_tstmp     = DATA(annos_tstmp)
+    ).
 
     DATA(lv_counter) = 0.
     lo_ref_descr ?= cl_abap_typedescr=>describe_by_data( is_outtab ). "Chiamare metodo statico su una struttura
@@ -296,13 +345,149 @@ CLASS zcl_alv_manager IMPLEMENTATION.
       ENDLOOP.
 
       IF <fs_fcat>-col_id IS INITIAL.
-        ADD 1 TO lv_counter.
+        lv_counter += 1.
         <fs_fcat>-col_id = <fs_fcat>-col_pos = lv_counter.
       ENDIF.
 
     ENDLOOP.
 
   ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ALV_MANAGER->CREATE_FC_FROM_CHARACT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IS_OUTTAB                      TYPE        DATA
+* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
+* | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD create_fc_from_charact.
+    DATA : lo_ref_descr         TYPE REF TO cl_abap_structdescr,
+           lref_typedescr       TYPE REF TO cl_abap_typedescr,
+           lt_detail            TYPE abap_compdescr_tab,
+           lt_chardescr         TYPE TABLE OF bapicharactdescr,
+           lt_bapiret           TYPE TABLE OF bapiret2,
+           ls_bapicharactdetail TYPE bapicharactdetail.
+
+    DATA(lv_counter) = 0.
+    lo_ref_descr ?= cl_abap_typedescr=>describe_by_data( is_outtab ). "Chiamare metodo statico su una struttura
+    lt_detail[] = lo_ref_descr->components.
+
+    LOOP AT lt_detail ASSIGNING FIELD-SYMBOL(<fs_detail>).
+      lv_counter += 1.
+
+      CALL FUNCTION 'BAPI_CHARACT_GETDETAIL'
+        EXPORTING
+          charactname   = <fs_detail>-name
+          keydate       = sy-datum
+        IMPORTING
+          charactdetail = ls_bapicharactdetail
+        TABLES
+          charactdescr  = lt_chardescr
+          return        = lt_bapiret.
+
+      CHECK ls_bapicharactdetail IS NOT INITIAL.
+      ASSIGN COMPONENT <fs_detail>-name OF STRUCTURE is_outtab TO FIELD-SYMBOL(<fs_comp>).
+
+      IF <fs_comp> IS ASSIGNED.
+        lref_typedescr = cl_abap_typedescr=>describe_by_data( <fs_comp> ) .
+
+        DATA(ls_chardescr) = VALUE #( lt_chardescr[ 1 ] OPTIONAL ).
+        APPEND VALUE #(
+            inttype = COND #( WHEN ls_bapicharactdetail-data_type EQ 'CHAR' THEN 'C' ELSE 'P' ) "lref_typedescr->absolute_name+6
+            fieldname = <fs_detail>-name
+            outputlen = ls_bapicharactdetail-length
+            col_id    = lv_counter
+            decimals_o = ls_bapicharactdetail-decimals
+            coltext = ls_chardescr-description
+            scrtext_m = ls_chardescr-description
+          ) TO ct_fieldcat ASSIGNING FIELD-SYMBOL(<fs_fcat>).
+
+        LOOP AT it_custom_fc ASSIGNING FIELD-SYMBOL(<fs_custom_fc>) WHERE fieldname EQ <fs_fcat>-fieldname.
+
+          ASSIGN COMPONENT <fs_custom_fc>-fc_component OF STRUCTURE <fs_fcat> TO FIELD-SYMBOL(<fs_comp_fcat>).
+          IF sy-subrc EQ 0.
+            <fs_comp_fcat> =  <fs_custom_fc>-value.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ALV_MANAGER->DISPLAY_DATA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_OUTTAB                      TYPE        ANY
+* | [--->] IT_SECOND_OUTTAB               TYPE        ANY(optional)
+* | [--->] IV_VERTICAL                    TYPE        FLAG(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD display_data.
+    IF gt_second_fcat IS NOT INITIAL.
+      DATA(lo_cont_docking) = NEW cl_gui_docking_container(
+        parent = cl_gui_container=>screen0
+*       side   = cl_gui_docking_container=>dock_at_left
+        ratio  = 90
+      ).
+      lo_cont_docking->set_extension( EXPORTING extension = 99999 EXCEPTIONS cntl_error = 1 OTHERS = 2 ).
+
+      DATA(lo_split_container) = NEW cl_gui_splitter_container(
+        parent  = lo_cont_docking
+        rows    = COND #( WHEN iv_vertical EQ abap_true THEN '1' ELSE '2' )
+        columns = COND #( WHEN iv_vertical EQ abap_true THEN '2' ELSE '1' )
+      ).
+
+      lo_split_container->get_container(
+        EXPORTING
+          row       = 1                 " Row
+          column    = 1                " Column
+        RECEIVING
+          container = DATA(lo_first_container)                 " Container
+      ).
+
+      lo_split_container->get_container(
+        EXPORTING
+          row       = COND #( WHEN iv_vertical EQ abap_true THEN '1' ELSE '2' )                 " Row
+          column    = COND #( WHEN iv_vertical EQ abap_true THEN '2' ELSE '1' )                " Column
+        RECEIVING
+          container = DATA(lo_second_container)                 " Container
+      ).
+
+      DATA(lo_alv_up) = NEW cl_gui_alv_grid( i_parent = lo_first_container ).
+      DATA(lo_alv_dw) = NEW cl_gui_alv_grid( i_parent = lo_second_container ).
+
+      lo_alv_up->set_table_for_first_display(
+*        EXPORTING
+*          is_layout       = lw_layout
+        CHANGING
+          it_outtab       = it_outtab
+          it_fieldcatalog = gt_fcat
+      ).
+
+      lo_alv_dw->set_table_for_first_display(
+*        EXPORTING
+*          is_layout       = lw_layout
+        CHANGING
+          it_outtab       = it_second_outtab
+          it_fieldcatalog = gt_second_fcat
+      ).
+
+    ELSE.
+      DATA(lo_alv) = NEW cl_gui_alv_grid( i_parent = cl_gui_container=>default_screen ).
+
+      lo_alv->set_table_for_first_display(
+*        EXPORTING
+*          is_layout       = lw_layout
+        CHANGING
+          it_outtab       = it_outtab
+          it_fieldcatalog = gt_fcat
+      ).
+    ENDIF.
+
+
+  ENDMETHOD.
+
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method ZCL_ALV_MANAGER->GET_FCAT
@@ -373,6 +558,52 @@ CLASS zcl_alv_manager IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ALV_MANAGER->SET_HANDLER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_HANDLER                     TYPE        TTY_HANDLER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_handler.
+    gt_handler = it_handler.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ALV_MANAGER->SET_SECOND_TABLE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_OUTTAB                      TYPE        ANY
+* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
+* | [--->] IV_CDS_NAME                    TYPE        STRING(optional)
+* | [--->] IV_CHARACT_FC                  TYPE        FLAG(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_second_table.
+
+    DATA: lref_row_outtab TYPE REF TO data,
+          lref_outtab     TYPE REF TO data.
+
+    FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
+                   <fs_outtab>     TYPE INDEX TABLE.
+
+    " Creo una tabella indicizzata
+    CREATE DATA lref_outtab LIKE it_outtab.
+    ASSIGN lref_outtab->* TO <fs_outtab>.
+
+    " Creo una struttura basata sulla tabella
+    CREATE DATA lref_row_outtab LIKE LINE OF <fs_outtab>.
+    ASSIGN lref_row_outtab->* TO <fs_outtab_row>.
+
+    IF iv_cds_name IS NOT INITIAL.
+      gt_second_fcat = create_fc_from_cds( iv_entity_name = iv_cds_name is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+    ELSE.
+      gt_second_fcat = create_dyn_fc( EXPORTING is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+    ENDIF.
+
+    IF iv_charact_fc EQ abap_true.
+      gt_second_fcat = create_fc_from_charact( is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method ZCL_ALV_MANAGER->TOP_OF_PAGE
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] E_DYNDOC_ID                    LIKE
@@ -382,10 +613,9 @@ CLASS zcl_alv_manager IMPLEMENTATION.
     " Aggiungo il testo nella top-of-page
     CALL METHOD e_dyndoc_id->add_text
       EXPORTING
-        text      = 'Header'
+        text      = CONV #( 'header' )
         sap_style = cl_dd_area=>heading.
 
   ENDMETHOD.
-
 ENDCLASS.
 ```
