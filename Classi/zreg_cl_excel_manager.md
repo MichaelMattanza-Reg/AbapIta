@@ -8,16 +8,12 @@ CLASS zreg_cl_excel_manager DEFINITION
 
     CONSTANTS: lc_value_separator VALUE ';'.
     TYPES:
-      BEGIN OF ty_new_rows,
+      BEGIN OF ty_excel_row,
         index TYPE i,
         row   TYPE string,
-      END OF ty_new_rows ,
-      BEGIN OF ty_del_rows,
-        index TYPE i,
-      END OF ty_del_rows.
+      END OF ty_excel_row.
     TYPES:
-      tty_new_rows TYPE TABLE OF ty_new_rows,
-      tty_del_rows TYPE TABLE OF ty_del_rows.
+      tty_excel_row TYPE TABLE OF ty_excel_row.
 
     CLASS-METHODS create_excel_from_table
       EXPORTING
@@ -27,7 +23,7 @@ CLASS zreg_cl_excel_manager DEFINITION
 
     CLASS-METHODS create_table_from_excel
       EXPORTING
-        !et_excel_tab TYPE tty_new_rows
+        !et_excel_tab TYPE tty_excel_row
       CHANGING
         !cv_excel     TYPE xstring.
 
@@ -36,13 +32,13 @@ CLASS zreg_cl_excel_manager DEFINITION
             !iv_file_path TYPE string
         EXPORTING
             !ev_excel     TYPE xstring
-            !et_excel_tab TYPE tty_new_rows.
+            !et_excel_tab TYPE tty_excel_row.
     CLASS-METHODS upload_excel
       IMPORTING
         !iv_file_path  TYPE string OPTIONAL
         !iv_excel_data TYPE xstring OPTIONAL
       EXPORTING
-        !et_excel      TYPE tty_new_rows.
+        !et_excel      TYPE tty_excel_row.
 
     CLASS-METHODS download_excel
         IMPORTING
