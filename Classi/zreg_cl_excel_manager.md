@@ -25,30 +25,29 @@ CLASS zreg_cl_excel_manager DEFINITION
       CHANGING
         !ct_table          TYPE any .
 
-    CLASS-METHODS add_rows_to_excel
-      IMPORTING
-        !it_new_rows TYPE tty_new_rows
-      CHANGING
-        !cv_data     TYPE xstring .
-
-    CLASS-METHODS del_rows_from_excel
-      IMPORTING
-        !it_new_rows TYPE tty_del_rows
-      CHANGING
-        !cv_data     TYPE xstring .
-
     CLASS-METHODS create_table_from_excel
       EXPORTING
         !et_excel_tab TYPE tty_new_rows
       CHANGING
         !cv_excel     TYPE xstring.
 
+    CLASS-METHODS get_excel_from_al11
+        IMPORTING
+            !iv_file_path TYPE string
+        EXPORTING
+            !ev_excel     TYPE xstring
+            !et_excel_tab TYPE tty_new_rows.
     CLASS-METHODS upload_excel
       IMPORTING
-        !iv_file_path TYPE string
+        !iv_file_path  TYPE string OPTIONAL
+        !iv_excel_data TYPE xstring OPTIONAL
       EXPORTING
-        !ev_excel     TYPE xstring.
+        !et_excel      TYPE tty_new_rows.
 
+    CLASS-METHODS download_excel
+        IMPORTING
+        !iv_path TYPE string OPTIONAL
+        !iv_excel_data TYPE xstring.
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.
@@ -56,80 +55,6 @@ ENDCLASS.
 
 
 CLASS zreg_cl_excel_manager IMPLEMENTATION.
-
-
-  METHOD add_rows_to_excel.
-    DATA: lt_string_rows TYPE TABLE OF string,
-          lt_rows        TYPE STANDARD TABLE OF string,
-          lt_detail      TYPE abap_compdescr_tab,
-
-          lref_data      TYPE REF TO data,
-
-          lo_ref_descr   TYPE REF TO cl_abap_structdescr.
-
-    FIELD-SYMBOLS : <gt_data>       TYPE STANDARD TABLE .
-
-    TRY .
-        DATA(lo_excel_ref) = NEW cl_fdt_xl_spreadsheet(
-                                document_name = 'text.xlsx'
-                                xdocument     = cv_data ) .
-      CATCH cx_fdt_excel_core.
-        "Implement suitable error handling here
-    ENDTRY .
-
-    lo_excel_ref->if_fdt_doc_spreadsheet~get_worksheet_names(
-      IMPORTING
-        worksheet_names = DATA(lt_worksheets) ).
-
-    IF NOT lt_worksheets IS INITIAL.
-      READ TABLE lt_worksheets INTO DATA(lv_woksheetname) INDEX 1.
-
-      DATA(lo_data_ref) = lo_excel_ref->if_fdt_doc_spreadsheet~get_itab_from_worksheet( lv_woksheetname ).
-      "now you have excel work sheet data in dyanmic internal table
-      ASSIGN lo_data_ref->* TO <gt_data>.
-    ENDIF.
-
-    CHECK <gt_data> IS ASSIGNED.
-
-    READ TABLE <gt_data> INDEX 1 ASSIGNING FIELD-SYMBOL(<fs_row>).
-
-    lo_ref_descr ?= cl_abap_typedescr=>describe_by_data( <fs_row> ). "Chiamare metodo statico su una struttura
-    CREATE DATA lref_data TYPE HANDLE lo_ref_descr.
-    lt_detail[] = lo_ref_descr->components.
-
-    ASSIGN lref_data->* TO <fs_row>.
-    CHECK <fs_row> IS ASSIGNED.
-
-    LOOP AT it_new_rows ASSIGNING FIELD-SYMBOL(<fs_new_rows>).
-      CLEAR <fs_row>.
-      SPLIT <fs_new_rows>-row AT ';' INTO TABLE lt_string_rows.
-
-      DATA(lv_counter) = 1.
-
-      LOOP AT lt_detail ASSIGNING FIELD-SYMBOL(<fs_detail>).
-        ASSIGN COMPONENT <fs_detail>-name OF STRUCTURE <fs_row> TO FIELD-SYMBOL(<fs_component>).
-        DATA(ls_string_rows) = VALUE #( lt_string_rows[ lv_counter ] OPTIONAL ).
-        <fs_component> = ls_string_rows.
-        lv_counter += 1.
-      ENDLOOP.
-
-      IF <fs_new_rows>-index IS NOT INITIAL.
-        INSERT <fs_row> INTO <gt_data> INDEX <fs_new_rows>-index.
-      ELSE.
-        APPEND <fs_row> TO <gt_data>.
-      ENDIF.
-      CLEAR lt_string_rows.
-    ENDLOOP.
-
-    create_excel_from_table(
-      IMPORTING
-        rv_bin_file = cv_data
-      CHANGING
-        ct_table    = <gt_data>
-    ).
-
-  ENDMETHOD.
-
 
   METHOD create_excel_from_table.
     DATA(lref_excel_data) = REF #( ct_table ).
@@ -168,33 +93,8 @@ CLASS zreg_cl_excel_manager IMPLEMENTATION.
      er_result_file       = rv_bin_file ).
   ENDMETHOD.
 
-  METHOD del_rows_from_excel.
-*    FIELD-SYMBOLS : <gt_data>       TYPE STANDARD TABLE .
-*
-*    TRY .
-*        DATA(lo_excel_ref) = NEW cl_fdt_xl_spreadsheet(
-*                                document_name = 'test.xlsx'
-*                                xdocument     = cv_data ) .
-*      CATCH cx_fdt_excel_core.
-*        "Implement suitable error handling here
-*    ENDTRY .
-*
-*    lo_excel_ref->if_fdt_doc_spreadsheet~get_worksheet_names(
-*      IMPORTING
-*        worksheet_names = DATA(lt_worksheets) ).
-*
-*    IF NOT lt_worksheets IS INITIAL.
-*      READ TABLE lt_worksheets INTO DATA(lv_woksheetname) INDEX 1.
-*
-*      DATA(lo_data_ref) = lo_excel_ref->if_fdt_doc_spreadsheet~get_itab_from_worksheet( lv_woksheetname ).
-*      "now you have excel work sheet data in dyanmic internal table
-*      ASSIGN lo_data_ref->* TO <gt_data>.
-*    ENDIF.
-*
-*    CHECK <gt_data> IS ASSIGNED.
-  ENDMETHOD.
-
   METHOD create_table_from_excel.
+
     DATA: lt_string_rows TYPE TABLE OF string,
           lt_rows        TYPE STANDARD TABLE OF string,
           lt_detail      TYPE abap_compdescr_tab,
@@ -205,7 +105,7 @@ CLASS zreg_cl_excel_manager IMPLEMENTATION.
 
     FIELD-SYMBOLS : <gt_data>       TYPE STANDARD TABLE .
 
-    DATA(lv_doc_name) = 'test.xslx'.
+    DATA(lv_doc_name) = 'Data'.
     TRY .
         DATA(lo_excel_ref) = NEW cl_fdt_xl_spreadsheet(
                                 document_name = CONV #( lv_doc_name )
@@ -242,66 +142,157 @@ CLASS zreg_cl_excel_manager IMPLEMENTATION.
       ENDLOOP.
     ENDLOOP.
 
-*    add_rows_to_excel(
-*      EXPORTING
-*        it_new_rows = lt_rows_to_add
-*      CHANGING
-*        cv_data     = et
-*    ).
-
   ENDMETHOD.
 
   METHOD upload_excel.
+    DATA(lo_xlsxhandler) = cl_ehfnd_xlsx=>get_instance( ).
+    CHECK lo_xlsxhandler IS NOT INITIAL.
 
-    DATA: lt_itab TYPE TABLE OF x,
-          lv_lenght TYPE i,
-          lv_excel_value TYPE STANDARD TABLE OF string.
-*    DATA: lt_itab TYPE TABLE OF string,
-*          lv_data_string TYPE string.
+    TRY.
+        DATA(lv_xstring_excel) = cl_openxml_helper=>load_local_file( CONV #( iv_file_path ) ).
+      CATCH cx_openxml_not_found INTO DATA(openxml_not_found).
 
-    CALL FUNCTION 'GUI_UPLOAD'
-      EXPORTING
-        filename                = CONV string( iv_file_path )
-*       has_field_separator     = 'X'
-        filetype                = 'BIN'
-      TABLES
-        data_tab                = lt_itab
-      EXCEPTIONS
-        file_open_error         = 1
-        file_read_error         = 2
-        no_batch                = 3
-        gui_refuse_filetransfer = 4
-        invalid_type            = 5
-        no_authority            = 6
-        unknown_error           = 7
-        bad_data_format         = 8
-        header_not_allowed      = 9
-        separator_not_allowed   = 10
-        header_too_long         = 11
-        unknown_dp_error        = 12
-        access_denied           = 13
-        dp_out_of_memory        = 14
-        disk_full               = 15
-        dp_timeout              = 16
-        OTHERS                  = 17.
+    ENDTRY.
 
-    DATA(lv_xstring_lenght) = REDUCE #( INIT wa_count TYPE int4 FOR wa_tab IN lt_itab NEXT wa_count += xstrlen( wa_tab ) ).
+    TRY.
+        DATA(lo_xlsxdocument) = lo_xlsxhandler->load_doc( iv_file_data = lv_xstring_excel ).
+      CATCH cx_openxml_format INTO DATA(openxml_format).
 
-    CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
-      EXPORTING
-        input_length = lv_xstring_lenght
-      IMPORTING
-        buffer       = ev_excel
-      TABLES
-        binary_tab   = lt_itab
-      EXCEPTIONS
-        failed       = 1
-        OTHERS       = 2.
-    IF sy-subrc <> 0.
-*          MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
-*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+      CATCH cx_openxml_not_allowed INTO DATA(openxml_not_allowed).
+        EXIT.
+      CATCH cx_dynamic_check INTO DATA(dynamic_check).
+
+    ENDTRY.
+
+    TRY.
+        DATA(lo_firstsheet) = lo_xlsxdocument->get_sheet_by_id( iv_sheet_id = 1 ).
+      CATCH cx_openxml_format  INTO openxml_format.
+
+      CATCH cx_openxml_not_found  INTO openxml_not_found.
+
+      CATCH cx_dynamic_check  INTO dynamic_check.
+
+    ENDTRY.
+
+    CHECK lo_firstsheet IS NOT INITIAL.
+
+    DATA(lv_columncount) = lo_firstsheet->get_last_column_number_in_row( 1 ).
+    DATA(lv_rowcount) = lo_firstsheet->get_last_row_number( ).
+
+    DATA(lv_index_row) = 0.
+    DATA(lv_index_col) = 0.
+
+    DO lv_rowcount  TIMES.
+      lv_index_row += 1.
+      DATA(lv_cellvalue) = lo_firstsheet->get_cell_content(
+                          EXPORTING
+                                iv_row     = lv_index_row
+                                iv_column  = 1
+                            ).
+      IF lv_cellvalue IS INITIAL.
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( index = lv_index_row ) TO et_excel ASSIGNING FIELD-SYMBOL(<fs_excel_row>).
+      DO lv_columncount TIMES.
+        lv_index_col += 1.
+
+        lv_cellvalue = lo_firstsheet->get_cell_content(
+                        EXPORTING
+                          iv_row     = lv_index_row
+                          iv_column  = lv_index_col ).
+
+        IF lv_index_col EQ 1 AND lv_cellvalue IS INITIAL.
+          EXIT.
+        ENDIF.
+
+        <fs_excel_row>-row = |{ <fs_excel_row>-row }{ lv_cellvalue };|.
+
+      ENDDO.
+
+      CLEAR lv_index_col.
+    ENDDO.
+
+  ENDMETHOD.
+
+  METHOD get_excel_from_al11.
+    TYPES:BEGIN OF ty_final,
+          var1 TYPE string,
+        END OF ty_final.
+
+    DATA: lt_file        TYPE TABLE OF ty_final,
+          lt_values_rows TYPE TABLE OF string,
+          ls_file        TYPE ty_final,
+          lv_index       TYPE i VALUE 0,
+          lv_new_row TYPE string.
+
+    DATA(lv_file_path) = iv_file_path.
+    CHECK lv_file_path IS NOT INITIAL.
+
+    OPEN DATASET iv_file_path FOR INPUT IN TEXT MODE ENCODING DEFAULT.
+    IF sy-subrc EQ 0.
+      DO.
+        READ DATASET lv_file_path INTO ls_file-var1.
+        IF sy-subrc EQ 0.
+          APPEND ls_file TO lt_file.
+        ELSE.
+          EXIT.
+        ENDIF.
+        CLEAR ls_file-var1.
+      ENDDO.
+
+      CLOSE DATASET lv_file_path.
     ENDIF.
-***
+
+
+    LOOP AT lt_file INTO ls_file.
+      SPLIT ls_file-var1 AT '",' INTO TABLE lt_values_rows.
+
+      LOOP AT lt_values_rows INTO DATA(ls_value_spec).
+        REPLACE '"'  WITH '' INTO ls_value_spec.
+        lv_new_row = |{ lv_new_row }{ ls_value_spec };|.
+      ENDLOOP.
+
+      APPEND VALUE #( index = lv_index row = lv_new_row ) TO et_excel_tab.
+      lv_index += 1.
+      CLEAR lv_new_row.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD download_excel.
+  TYPES: BEGIN OF ty_data,
+            line TYPE x LENGTH 255,
+         END OF ty_data.
+    DATA(lv_xstring) = iv_excel_data.
+    DATA(lv_filename) = iv_path.
+
+    IF lv_filename IS INITIAL.
+        lv_filename = 'C:\tmp\download.xlsx'.
+    ENDIF.
+
+    DATA : lt_itab TYPE TABLE OF ty_data,
+           lv_filesize TYPE i.
+
+    CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+    EXPORTING
+      buffer        = lv_xstring
+    IMPORTING
+      output_length = lv_filesize
+    TABLES
+      binary_tab    = lt_itab.
+
+    CALL FUNCTION 'GUI_DOWNLOAD'
+    EXPORTING
+      bin_filesize = lv_filesize
+      filename     = lv_filename
+      filetype     = 'BIN'
+    TABLES
+      data_tab     = lt_itab
+    EXCEPTIONS
+      OTHERS       = 1.
+
   ENDMETHOD.
 
 ENDCLASS.
