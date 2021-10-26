@@ -242,10 +242,9 @@ CLASS zreg_cl_excel_manager IMPLEMENTATION.
 
 
     LOOP AT lt_file INTO ls_file.
-      SPLIT ls_file-var1 AT '",' INTO TABLE lt_values_rows.
+      SPLIT ls_file-var1 AT lc_value_separator INTO TABLE lt_values_rows.
 
       LOOP AT lt_values_rows INTO DATA(ls_value_spec).
-        REPLACE '"'  WITH '' INTO ls_value_spec.
         lv_new_row = |{ lv_new_row }{ ls_value_spec };|.
       ENDLOOP.
 
