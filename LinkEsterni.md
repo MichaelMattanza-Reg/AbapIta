@@ -83,6 +83,9 @@
 - Tabelle DB / View
   - http://www.kurm.eu/wp-content/uploads/2015/05/Table-Maintenance-Generator-and-its-Modifications.pdf
   - https://oprsteny.com/?p=375
+
+- Tile
+  - https://blogs.sap.com/2021/01/27/adding-custom-program-to-fiori-launchpad/
   
 - Variabili in memoria
   - https://wiki.scn.sap.com/wiki/display/Community/ABAP+MEMORY+AND+SAP+MEMORY
