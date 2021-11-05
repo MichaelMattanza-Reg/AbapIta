@@ -1,87 +1,101 @@
-<h1>ALV Manager</h1>
-Questa classe può essere utilizzata per gestire toolbar e tabelle utilizzate da un’alv. E’ una classe generale quindi NON deve essere inserito del codice per un report specifico.
-<br><br>
+class ZREG_CL_ALV_MANAGER definition
+  public
+  create public .
 
-ATTENZIONE<br>
-Il metodo create_dyn_fc riceve in input il tipo tabella ZT_FC_CUSTOM. Se si vuole modificare un componente del field catalog si può inserire la modifica in questa tabella valorizzando i campi:
-  - *FIELDNAME:* nome del campo della tabella di output ( es. matnr )
-  - *FC_COMPONENT:* nome del componente del field catalog da modificare ( es. no_out )
-  - *VALUE:* valore che si vuole dare al componente del field catalog ( es. ‘X’ )
-  <br><br>
+public section.
 
-```abap
-CLASS zcl_alv_manager DEFINITION
-  PUBLIC
-  CREATE PUBLIC .
-
-  PUBLIC SECTION.
-
-    TYPES:
-      BEGIN OF ty_fc_custom,
+  types:
+    BEGIN OF ty_fc_custom,
         fieldname    TYPE char255,
         fc_component TYPE char255,
         value        TYPE char255,
-      END OF ty_fc_custom.
+      END OF ty_fc_custom .
+  types:
+    BEGIN OF ty_handler_activation,
+        handler_name TYPE char255,
+        first_alv    TYPE abap_bool,
+        second_alv   TYPE abap_bool,
+      END OF ty_handler_activation .
+  types:
+    tty_fc_custom          TYPE TABLE OF ty_fc_custom .
+  types:
+    tty_handler_activation TYPE TABLE OF ty_handler_activation .
 
-    TYPES:
-      tty_fc_custom TYPE TABLE OF ty_fc_custom .
+  data GO_ALV type ref to CL_GUI_ALV_GRID .
+  data GO_SECOND_ALV type ref to CL_GUI_ALV_GRID .
+  data GV_PROGRAM_NAME type STRING .
+  data GT_FCAT type LVC_T_FCAT .
+  data GT_SECOND_FCAT type LVC_T_FCAT .
 
+  methods HANDLE_TOOLBAR
+    for event TOOLBAR of CL_GUI_ALV_GRID
+    importing
+      !E_OBJECT
+      !E_INTERACTIVE .
+  methods HANDLE_USER_COMMAND
+    for event USER_COMMAND of CL_GUI_ALV_GRID
+    importing
+      !E_UCOMM .
+  methods HANDLE_HOTSPOT_CLICK
+    for event HOTSPOT_CLICK of CL_GUI_ALV_GRID
+    importing
+      !E_ROW_ID
+      !E_COLUMN_ID
+      !ES_ROW_NO .
+  methods HANDLE_DATA_CHANGED
+    for event DATA_CHANGED of CL_GUI_ALV_GRID
+    importing
+      !ER_DATA_CHANGED .
+  methods HANDLE_DOUBLE_CLICK
+    for event DOUBLE_CLICK of CL_GUI_ALV_GRID
+    importing
+      !E_ROW
+      !E_COLUMN .
+  methods HANDLE_CLOSE
+    for event CLOSE of CL_GUI_DIALOGBOX_CONTAINER
+    importing
+      !SENDER .
+*  methods TOP_OF_PAGE
+*    for event TOP_OF_PAGE of CL_GUI_ALV_GRID
+*    importing
+*      !E_DYNDOC_ID .
+  methods CONSTRUCTOR
+    importing
+      value(IV_PROGRAM_NAME) type STRING
+      value(IV_CDS_NAME) type STRING optional
+      value(IV_CHARACT_FC) type FLAG optional
+      value(IT_OUTTAB) type ANY
+      value(IO_ALV) type ref to CL_GUI_ALV_GRID optional
+      value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional .
+  methods GET_FCAT
+    returning
+      value(RT_FCAT) type LVC_T_FCAT .
+  methods SET_SECOND_TABLE
+    importing
+      value(IT_OUTTAB) type ANY
+      value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional
+      value(IV_CDS_NAME) type STRING optional
+      value(IV_CHARACT_FC) type FLAG optional .
+        " first table
+        " second table
+  methods DISPLAY_DATA
+    importing
+      value(IT_OUTTAB) type ANY optional
+      value(IS_VARIANT_FT) type DISVARIANT optional
+      value(IV_SAVE_FT) type CHAR01 optional
+      value(IS_LAYOUT_FT) type LVC_S_LAYO optional
+      value(IS_VARIANT_ST) type DISVARIANT optional
+      value(IV_SAVE_ST) type CHAR01 optional
+      value(IS_LAYOUT_ST) type LVC_S_LAYO optional
+      value(IV_VERTICAL) type FLAG optional .
+  methods GET_OUTPUT_TABLES
+    exporting
+      !ET_TABLE_FT type ref to data
+      !ET_TABLE_ST type ref to data.
+protected section.
 
-    DATA go_alv TYPE REF TO cl_gui_alv_grid .
-    DATA go_second_alv TYPE REF TO cl_gui_alv_grid .
-    DATA gv_program_name TYPE string .
-    DATA gt_fcat TYPE lvc_t_fcat .
-    DATA gt_second_fcat TYPE lvc_t_fcat .
-
-    METHODS handle_toolbar
-      FOR EVENT toolbar OF cl_gui_alv_grid
-      IMPORTING
-        !e_object
-        !e_interactive .
-    METHODS handle_user_command
-      FOR EVENT user_command OF cl_gui_alv_grid
-      IMPORTING
-        !e_ucomm .
-    METHODS handle_hotspot_click
-      FOR EVENT hotspot_click OF cl_gui_alv_grid
-      IMPORTING e_row_id e_column_id es_row_no.
-    METHODS handle_data_changed
-      FOR EVENT data_changed OF cl_gui_alv_grid
-      IMPORTING
-        !er_data_changed .
-    METHODS top_of_page
-      FOR EVENT top_of_page OF cl_gui_alv_grid
-      IMPORTING
-        !e_dyndoc_id.
-
-    METHODS constructor
-      IMPORTING
-        VALUE(iv_program_name) TYPE string
-        VALUE(iv_cds_name)     TYPE string OPTIONAL
-        VALUE(iv_charact_fc)   TYPE flag OPTIONAL
-        VALUE(it_outtab)       TYPE any
-        VALUE(io_alv)          TYPE REF TO cl_gui_alv_grid OPTIONAL
-        VALUE(it_custom_fc)    TYPE tty_fc_custom OPTIONAL .
-    METHODS get_fcat
-      RETURNING
-        VALUE(rt_fcat) TYPE lvc_t_fcat .
-
-    METHODS set_second_table
-      IMPORTING
-        VALUE(it_outtab)     TYPE any
-        VALUE(it_custom_fc)  TYPE tty_fc_custom OPTIONAL
-        VALUE(iv_cds_name)   TYPE string OPTIONAL
-        VALUE(iv_charact_fc) TYPE flag OPTIONAL.
-
-    METHODS display_data
-      IMPORTING
-        VALUE(it_outtab)        TYPE any
-        VALUE(it_second_outtab) TYPE any OPTIONAL
-        VALUE(iv_vertical)      TYPE flag OPTIONAL.
-
-  PROTECTED SECTION.
-
-
+  data gref_outtab type ref to data .
+  data gref_second_outtab type ref to data .
 
   PRIVATE SECTION.
 
@@ -107,15 +121,16 @@ CLASS zcl_alv_manager DEFINITION
       RETURNING
         VALUE(ct_fieldcat)  TYPE lvc_t_fcat .
 
+
 ENDCLASS.
 
 
 
-CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
+CLASS ZREG_CL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->CONSTRUCTOR
+* | Instance Public Method ZREG_CL_ALV_MANAGER->CONSTRUCTOR
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_PROGRAM_NAME                TYPE        STRING
 * | [--->] IV_CDS_NAME                    TYPE        STRING(optional)
@@ -126,8 +141,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD constructor.
 
-    DATA: lref_row_outtab TYPE REF TO data,
-          lref_outtab     TYPE REF TO data.
+    DATA: lref_row_outtab     TYPE REF TO data.
 
     FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
                    <fs_outtab>     TYPE INDEX TABLE.
@@ -137,8 +151,8 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     gv_program_name = iv_program_name.
 
     " Creo una tabella indicizzata
-    CREATE DATA lref_outtab LIKE it_outtab.
-    ASSIGN lref_outtab->* TO <fs_outtab>.
+    CREATE DATA gref_outtab LIKE it_outtab.
+    ASSIGN gref_outtab->* TO <fs_outtab>.
 
     " Creo una struttura basata sulla tabella
     CREATE DATA lref_row_outtab LIKE LINE OF <fs_outtab>.
@@ -157,11 +171,13 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     IF iv_charact_fc EQ abap_true.
       gt_fcat = create_fc_from_charact( is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
     ENDIF.
+
+
   ENDMETHOD.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->CREATE_DYN_FC
+* | Instance Private Method ZREG_CL_ALV_MANAGER->CREATE_DYN_FC
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IS_OUTTAB                      TYPE        DATA
 * | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
@@ -278,7 +294,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->CREATE_FC_FROM_CDS
+* | Instance Private Method ZREG_CL_ALV_MANAGER->CREATE_FC_FROM_CDS
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IV_ENTITY_NAME                 TYPE        STRING
 * | [--->] IS_OUTTAB                      TYPE        DATA
@@ -345,7 +361,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->CREATE_FC_FROM_CHARACT
+* | Instance Private Method ZREG_CL_ALV_MANAGER->CREATE_FC_FROM_CHARACT
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IS_OUTTAB                      TYPE        DATA
 * | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
@@ -407,17 +423,25 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->DISPLAY_DATA
+* | Instance Public Method ZREG_CL_ALV_MANAGER->DISPLAY_DATA
 * +-------------------------------------------------------------------------------------------------+
-* | [--->] IT_OUTTAB                      TYPE        ANY
-* | [--->] IT_SECOND_OUTTAB               TYPE        ANY(optional)
+* | [--->] IT_OUTTAB                      TYPE        ANY(optional)
+* | [--->] IS_VARIANT_FT                  TYPE        DISVARIANT(optional)
+* | [--->] IV_SAVE_FT                     TYPE        CHAR01(optional)
+* | [--->] IS_LAYOUT_FT                   TYPE        LVC_S_LAYO(optional)
+* | [--->] IS_VARIANT_ST                  TYPE        DISVARIANT(optional)
+* | [--->] IV_SAVE_ST                     TYPE        CHAR01(optional)
+* | [--->] IS_LAYOUT_ST                   TYPE        LVC_S_LAYO(optional)
 * | [--->] IV_VERTICAL                    TYPE        FLAG(optional)
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD display_data.
+    FIELD-SYMBOLS: <fs_outtab>        TYPE ANY TABLE,
+                   <fs_second_outtab> TYPE ANY TABLE.
+
     IF gt_second_fcat IS NOT INITIAL.
+
       DATA(lo_cont_docking) = NEW cl_gui_docking_container(
         parent = cl_gui_container=>screen0
-*       side   = cl_gui_docking_container=>dock_at_left
         ratio  = 90
       ).
       lo_cont_docking->set_extension( EXPORTING extension = 99999 EXCEPTIONS cntl_error = 1 OTHERS = 2 ).
@@ -447,30 +471,41 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
       go_alv = NEW cl_gui_alv_grid( i_parent = lo_first_container ).
       go_second_alv = NEW cl_gui_alv_grid( i_parent = lo_second_container ).
 
+      ASSIGN gref_outtab->* TO <fs_outtab>.
+      ASSIGN gref_second_outtab->* TO <fs_second_outtab>.
+
       go_alv->set_table_for_first_display(
-*        EXPORTING
-*          is_layout       = lw_layout
+        EXPORTING
+          is_layout       = is_layout_ft
+          is_variant      = is_variant_ft
+          i_save          = iv_save_ft
         CHANGING
-          it_outtab       = it_outtab
+          it_outtab       = <fs_outtab>
           it_fieldcatalog = gt_fcat
       ).
 
       go_second_alv->set_table_for_first_display(
-*        EXPORTING
-*          is_layout       = lw_layout
+        EXPORTING
+          is_layout       = is_layout_st
+          is_variant      = is_variant_st
+          i_save          = iv_save_st
         CHANGING
-          it_outtab       = it_second_outtab
+          it_outtab       = <fs_second_outtab>
           it_fieldcatalog = gt_second_fcat
       ).
 
     ELSE.
       go_alv = NEW cl_gui_alv_grid( i_parent = cl_gui_container=>default_screen ).
 
+      ASSIGN gref_outtab->* TO <fs_outtab>.
+
       go_alv->set_table_for_first_display(
-*        EXPORTING
-*          is_layout       = lw_layout
+        EXPORTING
+          is_layout       = is_layout_ft
+          is_variant      = is_variant_ft
+          i_save          = iv_save_ft
         CHANGING
-          it_outtab       = it_outtab
+          it_outtab       = <fs_outtab>
           it_fieldcatalog = gt_fcat
       ).
     ENDIF.
@@ -480,7 +515,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->GET_FCAT
+* | Instance Public Method ZREG_CL_ALV_MANAGER->GET_FCAT
 * +-------------------------------------------------------------------------------------------------+
 * | [<-()] RT_FCAT                        TYPE        LVC_T_FCAT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -493,7 +528,28 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->HANDLE_DATA_CHANGED
+* | Instance Public Method ZREG_CL_ALV_MANAGER->GET_OUTPUT_TABLES
+* +-------------------------------------------------------------------------------------------------+
+* | [<---] ET_TABLE_FT                    TYPE        XSTRING
+* | [<---] ET_TABLE_ST                    TYPE        XSTRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_output_tables.
+  et_table_ft = gref_outtab.
+  et_table_st = gref_second_outtab.
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZREG_CL_ALV_MANAGER->HANDLE_CLOSE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] SENDER                         LIKE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD handle_close.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZREG_CL_ALV_MANAGER->HANDLE_DATA_CHANGED
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] ER_DATA_CHANGED                LIKE
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -503,7 +559,18 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->HANDLE_HOTSPOT_CLICK
+* | Instance Public Method ZREG_CL_ALV_MANAGER->HANDLE_DOUBLE_CLICK
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] E_ROW                          LIKE
+* | [--->] E_COLUMN                       LIKE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD handle_double_click.
+    PERFORM handle_double_click IN PROGRAM (gv_program_name) IF FOUND USING e_row e_column.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZREG_CL_ALV_MANAGER->HANDLE_HOTSPOT_CLICK
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] E_ROW_ID                       LIKE
 * | [--->] E_COLUMN_ID                    LIKE
@@ -515,7 +582,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->HANDLE_TOOLBAR
+* | Instance Public Method ZREG_CL_ALV_MANAGER->HANDLE_TOOLBAR
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] E_OBJECT                       LIKE
 * | [--->] E_INTERACTIVE                  LIKE
@@ -529,7 +596,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->HANDLE_USER_COMMAND
+* | Instance Public Method ZREG_CL_ALV_MANAGER->HANDLE_USER_COMMAND
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] E_UCOMM                        LIKE
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -548,7 +615,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->SET_SECOND_TABLE
+* | Instance Public Method ZREG_CL_ALV_MANAGER->SET_SECOND_TABLE
 * +-------------------------------------------------------------------------------------------------+
 * | [--->] IT_OUTTAB                      TYPE        ANY
 * | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
@@ -557,19 +624,20 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_second_table.
 
-    DATA: lref_row_outtab TYPE REF TO data,
-          lref_outtab     TYPE REF TO data.
+    DATA: lref_row_outtab TYPE REF TO data.
 
     FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
                    <fs_outtab>     TYPE INDEX TABLE.
 
     " Creo una tabella indicizzata
-    CREATE DATA lref_outtab LIKE it_outtab.
-    ASSIGN lref_outtab->* TO <fs_outtab>.
+    CREATE DATA gref_second_outtab LIKE it_outtab.
+    ASSIGN gref_second_outtab->* TO <fs_outtab>.
 
     " Creo una struttura basata sulla tabella
     CREATE DATA lref_row_outtab LIKE LINE OF <fs_outtab>.
     ASSIGN lref_row_outtab->* TO <fs_outtab_row>.
+
+    MOVE-CORRESPONDING it_outtab TO <fs_outtab>.
 
     IF iv_cds_name IS NOT INITIAL.
       gt_second_fcat = create_fc_from_cds( iv_entity_name = iv_cds_name is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
@@ -580,22 +648,7 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     IF iv_charact_fc EQ abap_true.
       gt_second_fcat = create_fc_from_charact( is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
     ENDIF.
-  ENDMETHOD.
 
-
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->TOP_OF_PAGE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_DYNDOC_ID                    LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
-  METHOD top_of_page.
-
-    " Aggiungo il testo nella top-of-page
-    CALL METHOD e_dyndoc_id->add_text
-      EXPORTING
-        text      = CONV #( 'header' )
-        sap_style = cl_dd_area=>heading.
 
   ENDMETHOD.
 ENDCLASS.
-```
