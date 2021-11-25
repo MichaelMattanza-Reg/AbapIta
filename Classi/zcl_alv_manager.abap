@@ -1,57 +1,58 @@
-CLASS zcl_alv_manager DEFINITION
- PUBLIC
-  CREATE PUBLIC .
+class ZCL_ALV_MANAGER definition
+  public
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    TYPES:
-      BEGIN OF ty_fc_custom,
+  types:
+    BEGIN OF ty_fc_custom,
         fieldname    TYPE char255,
         fc_component TYPE char255,
         value        TYPE char255,
-      END OF ty_fc_custom,
-      tty_fc_custom TYPE TABLE OF ty_fc_custom.
+      END OF ty_fc_custom .
+  types:
+    tty_fc_custom TYPE TABLE OF ty_fc_custom .
 
-    DATA go_alv TYPE REF TO cl_gui_alv_grid .
-    DATA go_second_alv TYPE REF TO cl_gui_alv_grid .
-    DATA gv_program_name TYPE string .
-    DATA gt_fcat TYPE lvc_t_fcat .
-    DATA gt_second_fcat TYPE lvc_t_fcat .
+  data GO_ALV type ref to CL_GUI_ALV_GRID .
+  data GO_SECOND_ALV type ref to CL_GUI_ALV_GRID .
+  data GV_PROGRAM_NAME type STRING .
+  data GT_FCAT type LVC_T_FCAT .
+  data GT_SECOND_FCAT type LVC_T_FCAT .
 
-    METHODS constructor
-      IMPORTING
-        VALUE(iv_program_name) TYPE string
-        VALUE(iv_cds_name)     TYPE string OPTIONAL
-        VALUE(iv_charact_fc)   TYPE flag OPTIONAL
-        VALUE(it_outtab)       TYPE any
-        VALUE(io_alv)          TYPE REF TO cl_gui_alv_grid OPTIONAL
-        VALUE(it_custom_fc)    TYPE tty_fc_custom OPTIONAL .
-    METHODS get_fcat
-      RETURNING
-        VALUE(rt_fcat) TYPE lvc_t_fcat .
-
-    METHODS set_second_table
-      IMPORTING
-        VALUE(it_outtab)     TYPE any
-        VALUE(it_custom_fc)  TYPE tty_fc_custom OPTIONAL
-        VALUE(iv_cds_name)   TYPE string OPTIONAL
-        VALUE(iv_charact_fc) TYPE flag OPTIONAL .
-
-    METHODS display_data
-      IMPORTING
-        VALUE(is_variant_ft) TYPE disvariant OPTIONAL
-        VALUE(iv_save_ft)    TYPE char01 OPTIONAL
-        VALUE(is_layout_ft)  TYPE lvc_s_layo OPTIONAL
-        VALUE(is_variant_st) TYPE disvariant OPTIONAL
-        VALUE(iv_save_st)    TYPE char01 OPTIONAL
-        VALUE(is_layout_st)  TYPE lvc_s_layo OPTIONAL
-        VALUE(iv_vertical)   TYPE flag OPTIONAL .
-
-    METHODS get_output_tables
-      EXPORTING
-        !et_table_ft TYPE REF TO data
-        !et_table_st TYPE REF TO data.
-
+  methods CONSTRUCTOR
+    importing
+      value(IV_PROGRAM_NAME) type STRING
+      value(IV_CDS_NAME) type STRING optional
+      value(IV_CHARACT_FC) type FLAG optional
+      value(IT_OUTTAB) type ANY
+      value(IO_ALV) type ref to CL_GUI_ALV_GRID optional
+      value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional .
+  methods GET_FCAT
+    returning
+      value(RT_FCAT) type LVC_T_FCAT .
+  methods SET_SECOND_TABLE
+    importing
+      value(IT_OUTTAB) type ANY
+      value(IT_CUSTOM_FC) type TTY_FC_CUSTOM optional
+      value(IV_CDS_NAME) type STRING optional
+      value(IV_CHARACT_FC) type FLAG optional .
+  methods DISPLAY_DATA
+    importing
+      value(IS_VARIANT_FT) type DISVARIANT optional
+      value(IV_SAVE_FT) type CHAR01 optional
+      value(IS_LAYOUT_FT) type LVC_S_LAYO optional
+      value(IS_VARIANT_ST) type DISVARIANT optional
+      value(IV_SAVE_ST) type CHAR01 optional
+      value(IS_LAYOUT_ST) type LVC_S_LAYO optional
+      value(IV_VERTICAL) type FLAG optional .
+  methods GET_OUTPUT_TABLES
+    exporting
+      !ET_TABLE_FT type ref to DATA
+      !ET_TABLE_ST type ref to DATA .
+  methods UPDATE_TABLES
+    importing
+      value(IT_TABLE_FT) type DATA optional
+      value(IT_TABLE_ST) type DATA optional .
   PROTECTED SECTION.
     DATA gref_outtab TYPE REF TO data .
     DATA gref_second_outtab TYPE REF TO data .
@@ -146,16 +147,6 @@ ENDCLASS.
 CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->CONSTRUCTOR
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IV_PROGRAM_NAME                TYPE        STRING
-* | [--->] IV_CDS_NAME                    TYPE        STRING(optional)
-* | [--->] IV_CHARACT_FC                  TYPE        FLAG(optional)
-* | [--->] IT_OUTTAB                      TYPE        ANY
-* | [--->] IO_ALV                         TYPE REF TO CL_GUI_ALV_GRID(optional)
-* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD constructor.
 
     DATA: lref_row_outtab     TYPE REF TO data.
@@ -190,13 +181,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->CREATE_DYN_FC
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IS_OUTTAB                      TYPE        DATA
-* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
-* | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD create_dyn_fc.
     TYPES: BEGIN OF ty_dd04t,
              rollname  TYPE rollname,
@@ -306,14 +290,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->CREATE_FC_FROM_CDS
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IV_ENTITY_NAME                 TYPE        STRING
-* | [--->] IS_OUTTAB                      TYPE        DATA
-* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
-* | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD create_fc_from_cds.
 
     DATA : lo_ref_descr   TYPE REF TO cl_abap_structdescr,
@@ -374,13 +350,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->CREATE_FC_FROM_CHARACT
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IS_OUTTAB                      TYPE        DATA
-* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
-* | [<-()] CT_FIELDCAT                    TYPE        LVC_T_FCAT
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD create_fc_from_charact.
     DATA : lo_ref_descr         TYPE REF TO cl_abap_structdescr,
            lref_typedescr       TYPE REF TO cl_abap_typedescr,
@@ -437,17 +406,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->DISPLAY_DATA
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IS_VARIANT_FT                  TYPE        DISVARIANT(optional)
-* | [--->] IV_SAVE_FT                     TYPE        CHAR01(optional)
-* | [--->] IS_LAYOUT_FT                   TYPE        LVC_S_LAYO(optional)
-* | [--->] IS_VARIANT_ST                  TYPE        DISVARIANT(optional)
-* | [--->] IV_SAVE_ST                     TYPE        CHAR01(optional)
-* | [--->] IS_LAYOUT_ST                   TYPE        LVC_S_LAYO(optional)
-* | [--->] IV_VERTICAL                    TYPE        FLAG(optional)
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD display_data.
     FIELD-SYMBOLS: <fs_outtab>        TYPE ANY TABLE,
                    <fs_second_outtab> TYPE ANY TABLE.
@@ -534,66 +492,32 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->GET_FCAT
-* +-------------------------------------------------------------------------------------------------+
-* | [<-()] RT_FCAT                        TYPE        LVC_T_FCAT
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD get_fcat.
     " Ritorno all'utente il fc creato nel costruttore
     rt_fcat = gt_fcat.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_DATA_CHANGED
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] ER_DATA_CHANGED                LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_data_changed.
     PERFORM handle_data_changed IN PROGRAM (gv_program_name) IF FOUND USING er_data_changed.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_DOUBLE_CLICK
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_ROW                          LIKE
-* | [--->] E_COLUMN                       LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_double_click.
     PERFORM handle_double_click IN PROGRAM (gv_program_name) IF FOUND USING e_row e_column.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_HOTSPOT_CLICK
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_ROW_ID                       LIKE
-* | [--->] E_COLUMN_ID                    LIKE
-* | [--->] ES_ROW_NO                      LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_hotspot_click.
     PERFORM handle_hotspot_click IN PROGRAM (gv_program_name) IF FOUND USING e_row_id e_column_id es_row_no.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_TOOLBAR
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_OBJECT                       LIKE
-* | [--->] E_INTERACTIVE                  LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_toolbar.
     PERFORM handle_toolbar IN PROGRAM (gv_program_name) IF FOUND USING e_object e_interactive.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_USER_COMMAND
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_UCOMM                        LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_user_command.
     DATA: lt_rows     TYPE lvc_t_row.
     go_alv->get_selected_rows(
@@ -604,14 +528,6 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->SET_SECOND_TABLE
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] IT_OUTTAB                      TYPE        ANY
-* | [--->] IT_CUSTOM_FC                   TYPE        TTY_FC_CUSTOM(optional)
-* | [--->] IV_CDS_NAME                    TYPE        STRING(optional)
-* | [--->] IV_CHARACT_FC                  TYPE        FLAG(optional)
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_second_table.
     DATA: lref_row_outtab TYPE REF TO data.
 
@@ -640,95 +556,52 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Public Method ZCL_ALV_MANAGER->GET_OUTPUT_TABLES
-* +-------------------------------------------------------------------------------------------------+
-* | [<---] ET_TABLE_FT                    TYPE REF TO DATA
-* | [<---] ET_TABLE_ST                    TYPE REF TO DATA
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD get_output_tables.
     et_table_ft = gref_outtab.
     et_table_st = gref_second_outtab.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->SET_HANDLER_FIRST_ALV
-* +-------------------------------------------------------------------------------------------------+
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_handler_first_alv.
 
     SET HANDLER me->handle_toolbar FOR go_alv.
     SET HANDLER me->handle_user_command FOR go_alv.
     SET HANDLER me->handle_hotspot_click FOR go_alv.
-    SET HANDLER me->handle_data_changed FOR go_alv.
     SET HANDLER me->handle_double_click FOR go_alv.
+    SET HANDLER me->handle_data_changed FOR go_alv.
 
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->SET_HANDLER_SECOND_ALV
-* +-------------------------------------------------------------------------------------------------+
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD set_handler_second_alv.
     SET HANDLER me->handle_toolbar_st FOR go_second_alv.
     SET HANDLER me->handle_user_command_st FOR go_second_alv.
     SET HANDLER me->handle_hotspot_click_st FOR go_second_alv.
-    SET HANDLER me->handle_data_changed_st FOR go_second_alv.
     SET HANDLER me->handle_double_click_st FOR go_second_alv.
+    SET HANDLER me->handle_data_changed_st FOR go_second_alv.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_DATA_CHANGED_ST
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] ER_DATA_CHANGED                LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_data_changed_st.
     PERFORM handle_data_changed_st IN PROGRAM (gv_program_name) IF FOUND USING er_data_changed.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_DOUBLE_CLICK_ST
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_ROW                          LIKE
-* | [--->] E_COLUMN                       LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_double_click_st.
     PERFORM handle_double_click_st IN PROGRAM (gv_program_name) IF FOUND USING e_row e_column.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_HOTSPOT_CLICK_ST
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_ROW_ID                       LIKE
-* | [--->] E_COLUMN_ID                    LIKE
-* | [--->] ES_ROW_NO                      LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_hotspot_click_st.
     PERFORM handle_hotspot_click_st IN PROGRAM (gv_program_name) IF FOUND USING  e_row_id e_column_id es_row_no.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_TOOLBAR_ST
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_OBJECT                       LIKE
-* | [--->] E_INTERACTIVE                  LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_toolbar_st.
     PERFORM handle_toolbar_st IN PROGRAM (gv_program_name) IF FOUND USING e_object e_interactive.
   ENDMETHOD.
 
 
-* <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_ALV_MANAGER->HANDLE_USER_COMMAND_ST
-* +-------------------------------------------------------------------------------------------------+
-* | [--->] E_UCOMM                        LIKE
-* +--------------------------------------------------------------------------------------</SIGNATURE>
   METHOD handle_user_command_st.
     DATA: lt_rows     TYPE lvc_t_row.
     go_second_alv->get_selected_rows(
@@ -737,4 +610,24 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
     ).
     PERFORM handle_user_command_st IN PROGRAM (gv_program_name) IF FOUND USING  e_ucomm lt_rows.
   ENDMETHOD.
+
+
+  method UPDATE_TABLES.
+    IF it_table_ft IS NOT INITIAL.
+      gref_outtab = it_table_ft.
+
+      go_alv->refresh_table_display(
+        EXPORTING
+          is_stable      = VALUE lvc_s_stbl( row = 'X' col = 'X' )
+      ).
+
+    ENDIF.
+    IF it_table_st IS NOT INITIAL.
+      gref_second_outtab = it_table_st.
+      go_second_alv->refresh_table_display(
+        EXPORTING
+          is_stable      = VALUE lvc_s_stbl( row = 'X' col = 'X' )
+      ).
+    ENDIF.
+  endmethod.
 ENDCLASS.
