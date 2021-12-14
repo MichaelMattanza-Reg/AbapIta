@@ -39,6 +39,9 @@
 - Process order / Production order
   - https://archive.sap.com/discussions/thread/923748
   - https://help.sap.com/doc/saphelp_sbo900/9.0/it-IT/44/f29329df7365fbe10000000a1553f7/content.htm?no_cache=true (ita)
+
+- Processi paralleli
+   - https://help.sap.com/viewer/7bfe8cdcfbb040dcb6702dada8c3e2f0/7.5.20/en-US/4d909309eba36e73e10000000a15822b.html
   
 - PFCG
   - https://blogs.sap.com/2013/12/28/my-blog-2/
