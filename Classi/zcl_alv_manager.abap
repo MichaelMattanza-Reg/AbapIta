@@ -11,7 +11,7 @@ public section.
         value        TYPE char255,
       END OF ty_fc_custom .
   types:
-    tty_fc_custom TYPE TABLE OF ty_fc_custom .
+    tty_fc_custom TYPE TABLE OF ty_fc_custom WITH EMPTY KEY.
 
   data GO_ALV type ref to CL_GUI_ALV_GRID .
   data GO_SECOND_ALV type ref to CL_GUI_ALV_GRID .
