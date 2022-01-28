@@ -11,7 +11,7 @@ public section.
         value        TYPE char255,
       END OF ty_fc_custom .
   types:
-    tty_fc_custom TYPE TABLE OF ty_fc_custom .
+    tty_fc_custom TYPE TABLE OF ty_fc_custom WITH EMPTY KEY .
 
   data GO_ALV type ref to CL_GUI_ALV_GRID .
   data GO_SECOND_ALV type ref to CL_GUI_ALV_GRID .
@@ -39,7 +39,7 @@ public section.
   methods DISPLAY_DATA
     importing
       value(IS_VARIANT_FT) type DISVARIANT optional
-      value(IV_SAVE_FT) type CHAR01 optional
+      value(IV_SAVE_FT) type CHAR01 default 'A'
       value(IS_LAYOUT_FT) type LVC_S_LAYO optional
       value(IS_VARIANT_ST) type DISVARIANT optional
       value(IV_SAVE_ST) type CHAR01 optional
@@ -213,6 +213,10 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
       IF <fs_outtab_comp> IS ASSIGNED.
 
         lref_typedescr = cl_abap_typedescr=>describe_by_data( <fs_outtab_comp> ) .
+
+        IF lref_typedescr->absolute_name+6 EQ 'LVC_T_SCOL'.
+          CONTINUE.
+        ENDIF.
         lref_elemdescr ?= cl_abap_typedescr=>describe_by_data( <fs_outtab_comp> ) .
 
         APPEND VALUE #(
@@ -350,6 +354,37 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
+  METHOD get_fcat.
+    " Ritorno all'utente il fc creato nel costruttore
+    rt_fcat = gt_fcat.
+  ENDMETHOD.
+
+
+  METHOD handle_data_changed.
+    PERFORM handle_data_changed IN PROGRAM (gv_program_name) IF FOUND USING er_data_changed.
+  ENDMETHOD.
+
+
+  METHOD handle_hotspot_click.
+    PERFORM handle_hotspot_click IN PROGRAM (gv_program_name) IF FOUND USING e_row_id e_column_id es_row_no.
+  ENDMETHOD.
+
+
+  METHOD handle_toolbar.
+    PERFORM handle_toolbar IN PROGRAM (gv_program_name) IF FOUND USING e_object e_interactive.
+  ENDMETHOD.
+
+
+  METHOD handle_user_command.
+    DATA: lt_rows     TYPE lvc_t_row.
+    go_alv->get_selected_rows(
+      IMPORTING
+        et_index_rows = lt_rows
+    ).
+    PERFORM handle_user_command IN PROGRAM (gv_program_name) IF FOUND USING e_ucomm lt_rows.
+  ENDMETHOD.
+
+
   METHOD create_fc_from_charact.
     DATA : lo_ref_descr         TYPE REF TO cl_abap_structdescr,
            lref_typedescr       TYPE REF TO cl_abap_typedescr,
@@ -403,6 +438,34 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
+  ENDMETHOD.
+
+
+  METHOD set_second_table.
+    DATA: lref_row_outtab TYPE REF TO data.
+
+    FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
+                   <fs_outtab>     TYPE INDEX TABLE.
+
+    " Creo una tabella indicizzata
+    CREATE DATA gref_second_outtab LIKE it_outtab.
+    ASSIGN gref_second_outtab->* TO <fs_outtab>.
+
+    " Creo una struttura basata sulla tabella
+    CREATE DATA lref_row_outtab LIKE LINE OF <fs_outtab>.
+    ASSIGN lref_row_outtab->* TO <fs_outtab_row>.
+
+    MOVE-CORRESPONDING it_outtab TO <fs_outtab>.
+
+    IF iv_cds_name IS NOT INITIAL.
+      gt_second_fcat = create_fc_from_cds( iv_entity_name = iv_cds_name is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+    ELSE.
+      gt_second_fcat = create_dyn_fc( EXPORTING is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+    ENDIF.
+
+    IF iv_charact_fc EQ abap_true.
+      gt_second_fcat = create_fc_from_charact( is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
+    ENDIF.
   ENDMETHOD.
 
 
@@ -492,98 +555,19 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD get_fcat.
-    " Ritorno all'utente il fc creato nel costruttore
-    rt_fcat = gt_fcat.
-  ENDMETHOD.
-
-
-  METHOD handle_data_changed.
-    PERFORM handle_data_changed IN PROGRAM (gv_program_name) IF FOUND USING er_data_changed.
-  ENDMETHOD.
-
-
-  METHOD handle_double_click.
-    PERFORM handle_double_click IN PROGRAM (gv_program_name) IF FOUND USING e_row e_column.
-  ENDMETHOD.
-
-
-  METHOD handle_hotspot_click.
-    PERFORM handle_hotspot_click IN PROGRAM (gv_program_name) IF FOUND USING e_row_id e_column_id es_row_no.
-  ENDMETHOD.
-
-
-  METHOD handle_toolbar.
-    PERFORM handle_toolbar IN PROGRAM (gv_program_name) IF FOUND USING e_object e_interactive.
-  ENDMETHOD.
-
-
-  METHOD handle_user_command.
-    DATA: lt_rows     TYPE lvc_t_row.
-    go_alv->get_selected_rows(
-      IMPORTING
-        et_index_rows = lt_rows
-    ).
-    PERFORM handle_user_command IN PROGRAM (gv_program_name) IF FOUND USING e_ucomm lt_rows.
-  ENDMETHOD.
-
-
-  METHOD set_second_table.
-    DATA: lref_row_outtab TYPE REF TO data.
-
-    FIELD-SYMBOLS: <fs_outtab_row> TYPE any,
-                   <fs_outtab>     TYPE INDEX TABLE.
-
-    " Creo una tabella indicizzata
-    CREATE DATA gref_second_outtab LIKE it_outtab.
-    ASSIGN gref_second_outtab->* TO <fs_outtab>.
-
-    " Creo una struttura basata sulla tabella
-    CREATE DATA lref_row_outtab LIKE LINE OF <fs_outtab>.
-    ASSIGN lref_row_outtab->* TO <fs_outtab_row>.
-
-    MOVE-CORRESPONDING it_outtab TO <fs_outtab>.
-
-    IF iv_cds_name IS NOT INITIAL.
-      gt_second_fcat = create_fc_from_cds( iv_entity_name = iv_cds_name is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
-    ELSE.
-      gt_second_fcat = create_dyn_fc( EXPORTING is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
-    ENDIF.
-
-    IF iv_charact_fc EQ abap_true.
-      gt_second_fcat = create_fc_from_charact( is_outtab = <fs_outtab_row> it_custom_fc = it_custom_fc ).
-    ENDIF.
-  ENDMETHOD.
-
-
   METHOD get_output_tables.
     et_table_ft = gref_outtab.
     et_table_st = gref_second_outtab.
   ENDMETHOD.
 
 
-  METHOD set_handler_first_alv.
-
-    SET HANDLER me->handle_toolbar FOR go_alv.
-    SET HANDLER me->handle_user_command FOR go_alv.
-    SET HANDLER me->handle_hotspot_click FOR go_alv.
-    SET HANDLER me->handle_double_click FOR go_alv.
-    SET HANDLER me->handle_data_changed FOR go_alv.
-
-  ENDMETHOD.
-
-
-  METHOD set_handler_second_alv.
-    SET HANDLER me->handle_toolbar_st FOR go_second_alv.
-    SET HANDLER me->handle_user_command_st FOR go_second_alv.
-    SET HANDLER me->handle_hotspot_click_st FOR go_second_alv.
-    SET HANDLER me->handle_double_click_st FOR go_second_alv.
-    SET HANDLER me->handle_data_changed_st FOR go_second_alv.
-  ENDMETHOD.
-
-
   METHOD handle_data_changed_st.
     PERFORM handle_data_changed_st IN PROGRAM (gv_program_name) IF FOUND USING er_data_changed.
+  ENDMETHOD.
+
+
+  METHOD handle_double_click.
+    PERFORM handle_double_click IN PROGRAM (gv_program_name) IF FOUND USING e_row e_column.
   ENDMETHOD.
 
 
@@ -609,6 +593,26 @@ CLASS ZCL_ALV_MANAGER IMPLEMENTATION.
         et_index_rows = lt_rows
     ).
     PERFORM handle_user_command_st IN PROGRAM (gv_program_name) IF FOUND USING  e_ucomm lt_rows.
+  ENDMETHOD.
+
+
+  METHOD set_handler_first_alv.
+
+    SET HANDLER me->handle_toolbar FOR go_alv.
+    SET HANDLER me->handle_user_command FOR go_alv.
+    SET HANDLER me->handle_hotspot_click FOR go_alv.
+    SET HANDLER me->handle_double_click FOR go_alv.
+    SET HANDLER me->handle_data_changed FOR go_alv.
+
+  ENDMETHOD.
+
+
+  METHOD set_handler_second_alv.
+    SET HANDLER me->handle_toolbar_st FOR go_second_alv.
+    SET HANDLER me->handle_user_command_st FOR go_second_alv.
+    SET HANDLER me->handle_hotspot_click_st FOR go_second_alv.
+    SET HANDLER me->handle_double_click_st FOR go_second_alv.
+    SET HANDLER me->handle_data_changed_st FOR go_second_alv.
   ENDMETHOD.
 
 
