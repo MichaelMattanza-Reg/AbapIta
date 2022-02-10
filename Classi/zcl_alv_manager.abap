@@ -10,8 +10,8 @@ public section.
         fc_component TYPE char255,
         value        TYPE char255,
       END OF ty_fc_custom .
-  types:
-    tty_fc_custom TYPE TABLE OF ty_fc_custom WITH EMPTY KEY .
+  types: tty_fc_custom TYPE TABLE OF ty_fc_custom .
+
 
   data GO_ALV type ref to CL_GUI_ALV_GRID .
   data GO_SECOND_ALV type ref to CL_GUI_ALV_GRID .
