@@ -10,6 +10,7 @@ public section.
         fc_component TYPE char255,
         value        TYPE char255,
       END OF ty_fc_custom .
+
   types: tty_fc_custom TYPE TABLE OF ty_fc_custom .
 
 
